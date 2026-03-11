@@ -1,0 +1,288 @@
+# Fichiers de logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Fichiers de cache
+cache/
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+.cache/
+.parcel-cache/
+.vite/
+
+# Fichiers de configuration locale
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+config.local.php
+config.local.js
+config.local.ts
+config.local.json
+config.dev.js
+config.dev.ts
+
+# Fichiers de base de données
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+*.mdb
+*.accdb
+*.bak
+*.backup
+dump.sql
+backup.sql
+
+# Fichiers d'upload (sauf structure)
+uploads/*
+!uploads/.gitkeep
+backend/uploads/
+
+# Fichiers de dépendances
+vendor/
+node_modules/
+venv/
+env/
+ENV/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Fichiers de compilation
+*.min.js
+*.min.css
+dist/
+build/
+.next/
+.nuxt/
+.eslintcache
+.stylelintcache
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*~
+*.orig
+*.rej
+
+# Fichiers de cache PHP
+*.cache
+
+# Fichiers de session
+sessions/
+
+# Fichiers de debug
+debug.log
+error.log
+
+# Fichiers d'IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.settings/
+*.iml
+*.ipr
+*.iws
+
+# Fichiers de clés et certificats
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.cer
+*.der
+private/
+certificates/
+
+# Clés SSH
+.ssh/
+id_rsa
+id_rsa.pub
+id_dsa
+id_dsa.pub
+id_ecdsa
+id_ecdsa.pub
+id_ed25519
+id_ed25519.pub
+*.pub
+
+# Fichiers de configuration sensible
+config/database.php
+config/app.php
+config/secrets.json
+secrets.json
+
+# Fichiers de tokens et clés API
+api_keys.txt
+tokens.txt
+apikey*
+api-key*
+api_key*
+*secret*
+*token*
+*password*
+*passwd*
+*credential*
+jwt_keys/
+
+# Fichiers de mots de passe
+passwords.txt
+credentials.txt
+
+# Fichiers de configuration Prisma
+prisma/migrations/
+!prisma/migrations/.gitkeep
+
+# Fichiers de logs de test
+test-results/
+coverage/
+.nyc_output/
+htmlcov/
+.tox/
+.nox/
+
+# Fichiers de configuration de test
+test-config.json
+testing.env
+
+# Fichiers sensibles pour le scan
+scan_sessions.json
+scan_config.json
+pin_storage.json
+
+# Fichiers système
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+ehthumbs.db
+*.lnk
+
+# Fichiers d'environnement et secrets
+.env
+.env.production
+.env.postgresql
+backend/.env
+backend/.env.production
+backend/.env.postgresql
+frontend/.env
+frontend/.env.production
+frontend/.env.local
+
+# Fichiers de configuration sensibles
+backend/DB_CONNECT.md
+DEPLOYMENT.md
+frontend/TROUBLESHOOTING_POSTGRESQL.md
+
+# Fichiers Prisma sensibles
+backend/prisma/schema.prisma
+backend/prisma/seed.js
+backend/prisma/migrations/
+backend/test-*.js
+
+# Fichiers de build contenant des secrets
+frontend/dist/
+build/
+dist/
+
+# Fichiers de scripts avec secrets
+backend/create-admin.js
+backend/scripts/migrate-render.js
+backend/scripts/db-sync-safe.js
+backend/scripts/list-users.js
+
+# Python
+pip-log.txt
+pip-delete-this-directory.txt
+tox.ini
+.pytest_cache/
+.coverage
+.hypothesis/
+*.egg-info/
+.eggs/
+*.egg
+*.whl
+*.manifest
+*.spec
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# PHP
+composer.lock
+composer.phar
+.phpunit.result.cache
+.php_cs.cache
+.php-cs-fixer.cache
+*.phar
+
+# Cloud & Deployment
+.vercel
+.netlify
+.serverless
+.firebase/
+.gcloud/
+.aws/
+.terraform/
+*.tfstate
+*.tfstate.*
+.terragrunt-cache/
+
+# Docker
+*.env.docker
+docker-compose.override.yml
+
+# Coverage & Testing
+coverage/
+*.lcov
+coverage.json
+coverage.xml
+
+# Documentation build
+/site
+/docs/_build
+/docs/build
+
+# History & Misc
+.history/
+.vscode-test/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Secrets directories
+secrets/
+.private/
+.credentials/
+

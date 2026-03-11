@@ -1,0 +1,39 @@
+/*
+ * Styles pour le scanner de badges
+ * Version restructurée et optimisée
+ */
+
+:root {
+    --primary: #3498db;
+    --secondary: #2c3e50;
+    --success: #28a745;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --light: #f8f9fa;
+    --dark: #343a40;
+    
+    --border-radius: 8px;
+    --box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    --transition: all 0.3s ease;
+}
+
+/* Base styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--light);
+    line-height: 1.6;
+}
+
+/* Container principal */
+.scan-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0.5rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+/* Zone caméra */
+.camera-view { ... }

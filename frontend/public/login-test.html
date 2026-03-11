@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xpert Pro - Test Login</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles CSS -->
+    <link rel="stylesheet" href="/src/styles/pages/LoginPage.css">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-background">
+            <div class="animated-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Xpert Pro</span>
+                    </div>
+                    <h2>Connexion</h2>
+                    <p>Accédez à votre espace de travail</p>
+                </div>
+
+                <div class="login-tabs">
+                    <button class="tab-btn active" onclick="switchTab('employee')">
+                        <i class="fas fa-user-tie"></i>
+                        Employé
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('admin')">
+                        <i class="fas fa-shield-alt"></i>
+                        Admin
+                    </button>
+                </div>
+
+                <form onsubmit="handleLogin(event)" class="login-form">
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i>
+                            Email professionnel
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="jean.dupont@xpertpro.com"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i>
+                            Mot de passe
+                        </label>
+                        <div class="password-input">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="employee123"
+                                required
+                            />
+                            <button
+                                type="button"
+                                class="toggle-password"
+                                onclick="togglePassword()"
+                            >
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="error-message" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="error-text"></span>
+                    </div>
+
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Se connecter
+                    </button>
+                </form>
+
+                <div class="login-footer">
+                    
+                    <div class="login-links">
+                        <a href="#" class="forgot-password">
+                            <i class="fas fa-question-circle"></i>
+                            Mot de passe oublié ?
+                        </a>
+                        <a href="/" class="back-home">
+                            <i class="fas fa-arrow-left"></i>
+                            Retour à l'accueil
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'employee';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update placeholders based on tab
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            if (tab === 'admin') {
+                emailInput.placeholder = 'admin@xpertpro.com';
+                passwordInput.placeholder = 'admin123';
+            } else {
+                emailInput.placeholder = 'jean.dupont@xpertpro.com';
+                passwordInput.placeholder = 'employee123';
+            }
+        }
+        
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.querySelector('.toggle-password i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.classList.remove('fa-eye');
+                toggleBtn.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.classList.remove('fa-eye-slash');
+                toggleBtn.classList.add('fa-eye');
+            }
+        }
+        
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            
+            // Simple validation
+            const validUsers = {
+                employee: [
+                    { email: 'jean.dupont@xpertpro.com', password: 'employee123' },
+                    { email: 'marie.martin@xpertpro.com', password: 'employee123' }
+                ],
+                admin: [
+                    { email: 'admin@xpertpro.com', password: 'admin123' }
+                ]
+            };
+            
+            const users = validUsers[currentTab];
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                // Store user info
+                localStorage.setItem('user', JSON.stringify({
+                    email: email,
+                    role: currentTab,
+                    name: currentTab === 'admin' ? 'Administrateur' : 'John Doe'
+                }));
+                
+                // Redirect based on role
+                if (currentTab === 'admin') {
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    window.location.href = '/employee/dashboard';
+                }
+            } else {
+                errorText.textContent = 'Email ou mot de passe incorrect';
+                errorMessage.style.display = 'flex';
+            }
+        }
+        
+        // Hide error message when user starts typing
+        document.getElementById('email').addEventListener('input', () => {
+            document.getElementById('error-message').style.display = 'none';
+        });
+        
+        document.getElementById('password').addEventListener('input', () => {
+            document.getElementById('error-message').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

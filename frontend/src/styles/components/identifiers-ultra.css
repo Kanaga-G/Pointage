@@ -1,0 +1,139 @@
+/* Compact cards for generated identifiers (ID + matricule) */
+
+.identifiers-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.1), transparent 36%),
+    radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.08), transparent 30%),
+    #f8fafc;
+}
+
+.identifiers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.identifier-card {
+  border: 1px solid #d7dee9;
+  border-radius: 14px;
+  padding: 0.8rem;
+  background: #ffffff;
+  min-height: 148px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.identifier-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.identifier-card.id-card:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+}
+
+.identifier-card.matricule-card:hover {
+  border-color: rgba(5, 150, 105, 0.45);
+}
+
+.identifier-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.identifier-label::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.identifier-card.id-card .identifier-label::before {
+  background: #2563eb;
+}
+
+.identifier-card.matricule-card .identifier-label::before {
+  background: #059669;
+}
+
+.identifier-value-container {
+  border: 1px solid #dbe4f1;
+  border-radius: 11px;
+  background: #f8fbff;
+  min-height: 64px;
+  padding: 0.5rem 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.identifier-card.matricule-card .identifier-value-container {
+  background: #f6fdf9;
+}
+
+.identifier-value {
+  font-family: 'Consolas', 'SFMono-Regular', 'Menlo', 'Monaco', monospace;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.identifier-card.id-card .identifier-value {
+  color: #1d4ed8;
+}
+
+.identifier-card.matricule-card .identifier-value {
+  color: #047857;
+  font-size: 1.3rem;
+}
+
+.identifier-description {
+  margin-top: 0.55rem;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+/* Keep particle markup harmless without visual noise */
+.particles,
+.particle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .identifiers-container {
+    padding: 0.85rem;
+  }
+
+  .identifiers-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .identifier-card {
+    min-height: 130px;
+    padding: 0.75rem;
+  }
+
+  .identifier-value {
+    font-size: 1.25rem;
+  }
+
+  .identifier-card.matricule-card .identifier-value {
+    font-size: 1.12rem;
+  }
+}

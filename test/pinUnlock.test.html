@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Déverrouillage par Code PIN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test de Déverrouillage par Code PIN</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <ol>
+                <li>Assurez-vous que le backend est démarré sur <code>http://localhost:3003</code></li>
+                <li>Le code PIN par défaut est <strong>1234</strong></li>
+                <li>Testez différentes méthodes de déverrouillage</li>
+                <li>Vérifiez les résultats dans la console</li>
+            </ol>
+        </div>
+
+        <!-- Test 1: Déverrouillage par PIN par défaut -->
+        <div class="test-section">
+            <h3>Test 1: Déverrouillage par PIN par défaut (1234)</h3>
+            <p>Ce test vérifie que le code PIN par défaut fonctionne correctement.</p>
+            <input type="password" id="pin1" placeholder="1234" maxlength="4" value="1234">
+            <button onclick="testPINDefault()">Tester PIN 1234</button>
+            <div id="result1" class="result"></div>
+        </div>
+
+        <!-- Test 2: Déverrouillage par PIN incorrect -->
+        <div class="test-section">
+            <h3>Test 2: Déverrouillage par PIN incorrect</h3>
+            <p>Ce test vérifie que le système rejette les codes PIN incorrects.</p>
+            <input type="password" id="pin2" placeholder="9999" maxlength="4" value="9999">
+            <button onclick="testPINIncorrect()">Tester PIN 9999</button>
+            <div id="result2" class="result"></div>
+        </div>
+
+        <!-- Test 3: Obtenir le PIN actuel -->
+        <div class="test-section">
+            <h3>Test 3: Obtenir le code PIN actuel</h3>
+            <p>Ce test récupère les informations du code PIN actuel.</p>
+            <button onclick="testGetCurrentPIN()">Obtenir PIN actuel</button>
+            <div id="result3" class="result"></div>
+        </div>
+
+        <!-- Test 4: Modifier le PIN -->
+        <div class="test-section">
+            <h3>Test 4: Modifier le code PIN</h3>
+            <p>Ce test modifie le code PIN de 1234 à 5678.</p>
+            <input type="password" id="currentPin" placeholder="PIN actuel (1234)" value="1234" maxlength="4">
+            <input type="password" id="newPin" placeholder="Nouveau PIN (5678)" value="5678" maxlength="4">
+            <button onclick="testUpdatePIN()">Modifier PIN</button>
+            <div id="result4" class="result"></div>
+        </div>
+
+        <!-- Test 5: Vérifier le nouveau PIN -->
+        <div class="test-section">
+            <h3>Test 5: Vérifier le nouveau PIN (5678)</h3>
+            <p>Ce test vérifie que le nouveau code PIN fonctionne.</p>
+            <input type="password" id="pin5" placeholder="5678" maxlength="4" value="5678">
+            <button onclick="testNewPIN()">Tester PIN 5678</button>
+            <div id="result5" class="result"></div>
+        </div>
+
+        <!-- Test 6: Réinitialiser le PIN -->
+        <div class="test-section">
+            <h3>Test 6: Réinitialiser le PIN par défaut</h3>
+            <p>Ce test réinitialise le code PIN à la valeur par défaut 1234.</p>
+            <button onclick="testResetPIN()">Réinitialiser PIN à 1234</button>
+            <div id="result6" class="result"></div>
+        </div>
+
+        <!-- Test 7: Super Admin -->
+        <div class="test-section">
+            <h3>Test 7: Déverrouillage Super Admin</h3>
+            <p>Ce test vérifie que le super_admin peut déverrouiller sans code PIN.</p>
+            <button onclick="testSuperAdmin()">Tester Super Admin</button>
+            <div id="result7" class="result"></div>
+        </div>
+
+        <!-- Test 8: Autres méthodes -->
+        <div class="test-section">
+            <h3>Test 8: Autres méthodes de déverrouillage</h3>
+            <p>Tests des autres méthodes supportées.</p>
+            <button onclick="testMAC()">Tester MAC</button>
+            <button onclick="testIP()">Tester IP</button>
+            <button onclick="testToken()">Tester Token</button>
+            <div id="result8" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:3003';
+        const TEST_TOKEN = 'Bearer test-token';
+
+        // Fonction utilitaire pour faire des requêtes
+        async function makeRequest(method, url, data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': TEST_TOKEN
+                    }
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(BASE_URL + url, options);
+                const result = await response.json();
+                
+                return {
+                    status: response.status,
+                    success: response.ok,
+                    data: result
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    success: false,
+                    data: { error: error.message }
+                };
+            }
+        }
+
+        // Fonction pour afficher les résultats
+        function displayResult(elementId, result, testName) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let className = 'result ';
+            let content = `[${timestamp}] ${testName}\n`;
+            content += `Status: ${result.status}\n`;
+            content += `Success: ${result.success}\n`;
+            content += `Response:\n${JSON.stringify(result.data, null, 2)}`;
+            
+            if (result.success) {
+                className += 'success';
+            } else {
+                className += 'error';
+            }
+            
+            element.className = className;
+            element.textContent = content;
+        }
+
+        // Test 1: PIN par défaut
+        async function testPINDefault() {
+            const pin = document.getElementById('pin1').value;
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'pin',
+                value: pin,
+                deviceName: 'Test Device'
+            });
+            displayResult('result1', result, 'Test PIN par défaut');
+        }
+
+        // Test 2: PIN incorrect
+        async function testPINIncorrect() {
+            const pin = document.getElementById('pin2').value;
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'pin',
+                value: pin,
+                deviceName: 'Test Device'
+            });
+            displayResult('result2', result, 'Test PIN incorrect');
+        }
+
+        // Test 3: Obtenir PIN actuel
+        async function testGetCurrentPIN() {
+            const result = await makeRequest('GET', '/api/scan/pin');
+            displayResult('result3', result, 'Obtenir PIN actuel');
+        }
+
+        // Test 4: Modifier PIN
+        async function testUpdatePIN() {
+            const currentPin = document.getElementById('currentPin').value;
+            const newPin = document.getElementById('newPin').value;
+            const result = await makeRequest('PUT', '/api/scan/pin', {
+                currentPin: currentPin,
+                newPin: newPin
+            });
+            displayResult('result4', result, 'Modifier PIN');
+        }
+
+        // Test 5: Vérifier nouveau PIN
+        async function testNewPIN() {
+            const pin = document.getElementById('pin5').value;
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'pin',
+                value: pin,
+                deviceName: 'Test Device'
+            });
+            displayResult('result5', result, 'Test nouveau PIN');
+        }
+
+        // Test 6: Réinitialiser PIN
+        async function testResetPIN() {
+            const result = await makeRequest('POST', '/api/scan/pin/reset');
+            displayResult('result6', result, 'Réinitialiser PIN');
+        }
+
+        // Test 7: Super Admin
+        async function testSuperAdmin() {
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'admin_override'
+            });
+            displayResult('result7', result, 'Test Super Admin');
+        }
+
+        // Test 8: Autres méthodes
+        async function testMAC() {
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'mac',
+                value: '00:1A:2B:3C:4D:5E',
+                deviceName: 'Test Device'
+            });
+            displayResult('result8', result, 'Test MAC');
+        }
+
+        async function testIP() {
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'ip',
+                value: '192.168.1.100',
+                deviceName: 'Test Device'
+            });
+            displayResult('result8', result, 'Test IP');
+        }
+
+        async function testToken() {
+            const result = await makeRequest('POST', '/api/scan/unlock/request', {
+                method: 'token',
+                value: 'SCAN_UNLOCK_TOKEN',
+                deviceName: 'Test Device'
+            });
+            displayResult('result8', result, 'Test Token');
+        }
+
+        // Vérifier si le serveur est démarré au chargement
+        window.onload = async function() {
+            try {
+                const result = await makeRequest('GET', '/api/scan/pin');
+                if (result.success) {
+                    console.log('✅ Serveur backend détecté et fonctionnel');
+                } else {
+                    console.log('⚠️ Serveur backend répond mais avec des erreurs');
+                }
+            } catch (error) {
+                console.log('❌ Serveur backend non détecté. Veuillez démarrer le serveur avec: cd backend && node server.js');
+                alert('Le serveur backend n\'est pas démarré sur http://localhost:3003. Veuillez le démarrer avant de continuer.');
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+/* ===== VARIABLES CSS ===== */
+/* =======================================================
+   VARIABLES MODERNES
+======================================================= */
+:root {
+    --primary: #0672e4;
+    --primary-dark: #3a56d4;
+    --primary-light: #6b8aff;
+    --secondary: #0672e4;
+    --accent: #4cc9f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --light: #f8fafc;
+    --dark: #1e293b;
+    --text: #ffff;
+    --text-light: #64748b;
+    --white: #ffff;
+        --gradient: linear-gradient(135deg, #2078e9 0%, #0672e4 100%);
+    --gradient-light: linear-gradient(135deg, #0672e4 0%, #0672e4 100%);
+    
+    --radius: 16px;
+    --radius-lg: 24px;
+    --shadow: 0 8px 32px rgba(67, 97, 238, 0.15);
+    --shadow-lg: 0 20px 40px rgba(67, 97, 238, 0.25);
+    --shadow-hover: 0 25px 50px rgba(67, 97, 238, 0.3);
+    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =======================================================
+   RESET & BASE MODERNE
+======================================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+    background: var(--light);
+}
+
+.modern-homepage {
+    background: linear-gradient(180deg, #ffff 0%, #f8fafc 100%);
+}
+
+/* =======================================================
+   HERO SECTION MODERNE
+======================================================= */
+.hero-section-modern {
+    position: relative;
+    min-height: 100vh;
+    padding: 100px 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+    overflow: hidden;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+}
+
+.animated-shapes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--primary-light);
+    opacity: 0.1;
+    animation: float 20s infinite ease-in-out;
+}
+
+.shape-1 {
+    width: 300px;
+    height: 300px;
+    top: -150px;
+    right: -150px;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    width: 200px;
+    height: 200px;
+    bottom: 100px;
+    left: -100px;
+    background: var(--accent);
+    animation-delay: 5s;
+}
+
+.shape-3 {
+    width: 150px;
+    height: 150px;
+    top: 50%;
+    right: 20%;
+    background: var(--secondary);
+    animation-delay: 10s;
+}
+
+.shape-4 {
+    width: 100px;
+    height: 100px;
+    bottom: 200px;
+    right: 30%;
+    animation-delay: 15s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(120deg); }
+    66% { transform: translateY(20px) rotate(240deg); }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary);
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(67, 97, 238, 0.2);
+}
+
+.hero-title-modern {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 24px;
+    color: var(--dark);
+}
+
+.gradient-text {
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+}
+
+.highlight-modern {
+    position: relative;
+    display: inline-block;
+}
+
+.highlight-modern::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.4;
+    z-index: -1;
+}
+
+.hero-subtitle-modern {
+    font-size: 1.25rem;
+    color: var(--text-light);
+    margin-bottom: 32px;
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+.hero-stats-modern {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 40px;
+}
+
+.stat-modern {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+.cta-buttons-modern {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.btn-modern {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    transition: var(--transition);
+    z-index: 1;
+}
+
+.btn-primary-modern {
+    background: var(--gradient);
+    color: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.btn-secondary-modern {
+    background: var(--white);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    box-shadow: var(--shadow);
+}
+
+.btn-hover-effect {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+    z-index: -1;
+}
+
+.btn-modern:hover .btn-hover-effect {
+    left: 100%;
+}
+
+.btn-primary-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-secondary-modern:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateY(-2px);
+}
+
+.trust-badges {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.trust-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+.trust-item i {
+    color: var(--success);
+}
+
+/* =======================================================
+   VISUEL HERO (Dashboard animé)
+======================================================= */
