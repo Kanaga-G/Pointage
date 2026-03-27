@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // Configuration Vite + React
-// Proxy des requêtes `/api` vers le backend Node (localhost:3002) pendant le développement.
+// Proxy des requêtes `/api` vers le backend Node local pendant le développement.
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -20,7 +20,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3003',
+        target: 'http://localhost:3004',
         changeOrigin: true
       }
     }

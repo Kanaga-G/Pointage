@@ -39,9 +39,12 @@ interface RoleDefinition {
 const FALLBACK_EMPLOYEE_ROLES: RoleDefinition[] = [
   { id: 'manager', label: 'Manager', scope: 'employee' },
   { id: 'chef_departement', label: 'Chef de departement', scope: 'employee' },
-  { id: 'comptable', label: 'Comptable', scope: 'employee' },
   { id: 'stagiaire', label: 'Stagiaire', scope: 'employee' },
   { id: 'employe', label: 'Employe', scope: 'employee' }
+]
+
+const FALLBACK_ADMIN_ROLES: RoleDefinition[] = [
+  { id: 'admin', label: 'Admin', scope: 'admin' }
 ]
 
 const isBlobUrl = (value: string) => value.startsWith('blob:')
@@ -51,7 +54,6 @@ const PREVIEW_ROLE_PREFIX: Record<string, string> = {
   manager: 'MGR',
   hr: 'RHS',
   chef_departement: 'CHD',
-  comptable: 'CPT',
   stagiaire: 'STG',
   employe: 'EMP'
 }
@@ -100,6 +102,15 @@ export default function EmployeNewPage() {
   const [loadingIdentifiers, setLoadingIdentifiers] = useState(false)
   const [roles, setRoles] = useState<RoleDefinition[]>(FALLBACK_EMPLOYEE_ROLES)
 
+  const isSuperAdmin = useMemo(() => user?.role === 'super_admin', [user?.role])
+
+  const availableRoles = useMemo(() => {
+    if (isSuperAdmin) {
+      return [...FALLBACK_EMPLOYEE_ROLES, ...FALLBACK_ADMIN_ROLES]
+    }
+    return FALLBACK_EMPLOYEE_ROLES
+  }, [isSuperAdmin])
+
   const resolvedPhotoUrl = useMemo(
     () => photoPreviewUrl || uploadService.resolvePhotoUrl(formData.photo),
     [formData.photo, photoPreviewUrl]
@@ -110,14 +121,23 @@ export default function EmployeNewPage() {
   const loadRoles = async () => {
     try {
       const response = await apiClient.get<{ success: boolean; roles?: RoleDefinition[] }>('/api/roles?scope=employee')
+      let loadedRoles: RoleDefinition[] = []
+      
       if (response?.success && Array.isArray(response.roles) && response.roles.length > 0) {
-        setRoles(response.roles)
+        loadedRoles = response.roles
       } else {
-        setRoles(FALLBACK_EMPLOYEE_ROLES)
+        loadedRoles = FALLBACK_EMPLOYEE_ROLES
       }
-    } catch (rolesError) {
-      console.error('Erreur chargement roles creation employe:', rolesError)
-      setRoles(FALLBACK_EMPLOYEE_ROLES)
+
+      // Ajouter les rôles admin seulement si super_admin
+      if (isSuperAdmin) {
+        loadedRoles = [...loadedRoles, ...FALLBACK_ADMIN_ROLES]
+      }
+      
+      setRoles(loadedRoles)
+    } catch (loadError) {
+      console.error('Erreur chargement roles:', loadError)
+      setRoles(isSuperAdmin ? [...FALLBACK_EMPLOYEE_ROLES, ...FALLBACK_ADMIN_ROLES] : FALLBACK_EMPLOYEE_ROLES)
     }
   }
 
@@ -468,7 +488,7 @@ export default function EmployeNewPage() {
                 onChange={handleInputChange}
                 className="xp-form-input"
               >
-                {roles.map((role) => (
+                {availableRoles.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.label}
                   </option>

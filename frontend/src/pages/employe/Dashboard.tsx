@@ -159,7 +159,7 @@ const EMPTY_STATS: Statistique = {
   pointages_mois: 0
 }
 
-const EMPLOYEE_ALLOWED_ROLES = new Set(['employe', 'chef_departement', 'comptable', 'stagiaire'])
+const EMPLOYEE_ALLOWED_ROLES = new Set(['employe', 'chef_departement', 'stagiaire'])
 const CALENDAR_PRIORITY_LABELS: Record<'secondaire' | 'normale' | 'importante' | 'urgente', string> = {
   secondaire: 'Secondaire',
   normale: 'Normale',
@@ -225,7 +225,7 @@ const normalizePointageType = (value: string): PointageType => {
     if (lower.includes('fin') || lower.includes('repr')) return 'pause_fin'
     return 'pause_debut'
   }
-  if (lower.includes('dÃ©part') || ascii.includes('depart') || ascii.includes('dapart') || lower.includes('depar')) return 'depart'
+  if (lower.includes('départ') || ascii.includes('depart') || ascii.includes('dapart') || lower.includes('depar')) return 'depart'
   return 'arrivee'
 }
 
@@ -376,7 +376,7 @@ const formatRoleLabel = (value?: string) => {
     manager: 'Manager',
     hr: 'RH',
     chef_departement: 'Chef de departement',
-    comptable: 'Comptable',
+  
     stagiaire: 'Stagiaire',
     employe: 'Employe'
   }

@@ -1,20 +1,20 @@
 services:
-  db:
+  postgres:
     image: postgres:16
-    container_name: xpertpro-postgres
+    container_name: postgres-registre
     environment:
-      POSTGRES_DB: xpert_pro
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pointage
+      POSTGRES_USER: moha
+      POSTGRES_PASSWORD: mohaguindo
     ports:
       - "5432:5432"
     volumes:
-      - xpertpro_pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d xpert_pro"]
+      test: ["CMD-SHELL", "pg_isready -U moha -d pointage"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  xpertpro_pgdata:
+  postgres_data:

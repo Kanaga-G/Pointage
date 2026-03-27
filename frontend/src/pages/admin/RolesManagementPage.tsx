@@ -129,7 +129,7 @@ export default function RolesManagementPage() {
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Attribution des roles ({filtered.length})</h3>
-            <p className="text-sm text-gray-600">Manager, chef de departement, comptable, stagiaire, employe.</p>
+            <p className="text-sm text-gray-600">Manager, chef de departement, stagiaire, employe.</p>
           </div>
 
           {loading ? (

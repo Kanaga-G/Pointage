@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IdCard, QrCode, RefreshCw, ShieldCheck, Edit, Camera, User, Clock, Calendar, Activity } from 'lucide-react'
 import { apiClient } from '../../services/apiClient'
@@ -32,11 +32,10 @@ interface EmployeProfile {
   role?: string
 }
 
-const EMPLOYEE_ALLOWED_ROLES = new Set(['employe', 'chef_departement', 'comptable', 'stagiaire'])
+const EMPLOYEE_ALLOWED_ROLES = new Set(['employe', 'chef_departement', 'stagiaire'])
 
 const ROLE_BADGE_PRIVILEGES: Record<string, string[]> = {
   chef_departement: ['Acces planning equipe', 'Consultation tableau de service', 'Pointage securise'],
-  comptable: ['Acces feuilles de temps', 'Consultation historiques mensuels', 'Pointage securise'],
   stagiaire: ['Pointage personnel', 'Acces zones stagiaire', 'Historique personnel'],
   employe: ['Pointage personnel', 'Acces zone employe', 'Historique personnel']
 }
@@ -264,8 +263,8 @@ const BadgePage: React.FC = () => {
                             badge.status === 'inactive' ? 'bg-red-500' : 'bg-yellow-500'
                           }`}>
                             <span className="text-white text-xs flex items-center justify-center h-full">
-                              {badge.status === 'active' ? '✓' :
-                               badge.status === 'inactive' ? '✗' : '!'}
+                              {badge.status === 'active' ? 'Ô£ô' :
+                               badge.status === 'inactive' ? 'Ô£ù' : '!'}
                             </span>
                           </div>
                         </>

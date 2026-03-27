@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Calendar,
@@ -156,6 +156,8 @@ const Sidebar = ({ isOpen, onClose, variant = 'desktop', collapsed = false }: Si
                 <NavLink
                   key={item.id}
                   to={item.path}
+                  target={item.id === 'scan' ? '_blank' : undefined}
+                  rel={item.id === 'scan' ? 'noopener noreferrer' : undefined}
                   onClick={handleNavigate}
                   className={cn('php-nav-link', isItemActive(item.path) && 'is-active')}
                   title={collapsed ? item.label : undefined}

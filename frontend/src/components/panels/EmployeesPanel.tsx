@@ -180,14 +180,19 @@ export default function EmployeesPanel() {
                     {employee.email}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const effectiveRole = ((employee as any).role_metier || employee.role) as string
+                      return (
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      employee.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                      employee.role === 'manager' ? 'bg-blue-100 text-blue-800' :
-                      employee.role === 'hr' ? 'bg-green-100 text-green-800' :
+                      effectiveRole === 'admin' ? 'bg-purple-100 text-purple-800' :
+                      effectiveRole === 'manager' ? 'bg-blue-100 text-blue-800' :
+                      effectiveRole === 'hr' ? 'bg-green-100 text-green-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {ROLES.find(r => r.id === employee.role)?.name || employee.role}
+                      {ROLES.find(r => r.id === effectiveRole)?.name || effectiveRole}
                     </span>
+                      )
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {employee.departement}

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../services/apiClient'
 import { useAuth } from '../../services/authService'
 
-const EMPLOYEE_ALLOWED_ROLES = new Set(['employe', 'chef_departement', 'comptable', 'stagiaire'])
+const EMPLOYEE_ALLOWED_ROLES = new Set(['employe', 'chef_departement', 'stagiaire'])
 const FILTERS = ['all', 'pointage', 'retard', 'absence', 'demande', 'badge', 'evenement'] as const
 type FilterType = typeof FILTERS[number]
 

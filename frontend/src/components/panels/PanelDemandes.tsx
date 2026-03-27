@@ -229,7 +229,11 @@ export default function PanelDemandes({ data, stats, onDemandeUpdate }: PanelDem
                         <small className="text-muted">
                           <i className="fas fa-check-circle me-1" />
                           Traité le {formatDate(demande.date_traitement)}
-                          {demande.traite_par && ` par ${demande.traite_par}`}
+                          {demande.traite_par && (
+                            <span className="ms-1">
+                              par <strong className="text-primary">{demande.traite_par}</strong>
+                            </span>
+                          )}
                         </small>
                       </p>
                     )}

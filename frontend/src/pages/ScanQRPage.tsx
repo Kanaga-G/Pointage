@@ -9,14 +9,18 @@ import {
   Clock3,
   Download,
   FileText,
+  HelpCircle,
   ImageUp,
+  LogOut,
   Mail,
   MapPin,
   Phone,
   QrCode,
   RefreshCw,
   Search,
+  ServerCrash,
   ShieldCheck,
+  ShieldX,
   User,
   Wifi,
   WifiOff,
@@ -821,10 +825,12 @@ export default function ScanQRPage() {
   }, [history, searchQuery, statusFilter, actionFilter])
 
   // Scan submission
-  const submitScan = useCallback(async (rawToken: string, source: ScanSource, scanAction?: RequiredAction, justification?: string) => {
+  const submitScan = useCallback(async (rawToken: string, source: ScanSource, scanAction?: RequiredAction, justification?: string): Promise<void> => {
     const token = String(rawToken || '').trim()
     if (!token || isSubmittingRef.current) return
 
+    // Permettre les scans de badges même sans session active
+    // Le badge sera validé par le backend indépendamment de la session frontend
     isSubmittingRef.current = true
     setSubmitting(true)
     setCameraError(null)
@@ -863,17 +869,37 @@ export default function ScanQRPage() {
 
       await loadHistory()
     } catch (error: any) {
+      console.error('Erreur de scan QR:', error)
+      
+      // Gestion spécifique des erreurs HTTP
+      let errorMessage = String(error?.message || 'Erreur de scan')
+      let errorCode = typeof error?.code === 'string' ? error.code : undefined
+      
+      if (error?.status === 403) {
+        errorMessage = 'Accès refusé : Votre badge n\'est pas reconnu ou a expiré. Veuillez contacter votre administrateur.'
+        errorCode = 'ACCESS_DENIED'
+      } else if (error?.status === 401) {
+        errorMessage = 'Session expirée : Veuillez vous reconnecter pour continuer.'
+        errorCode = 'SESSION_EXPIRED'
+      } else if (error?.status === 404) {
+        errorMessage = 'Service indisponible : Le service de pointage n\'est pas accessible.'
+        errorCode = 'SERVICE_UNAVAILABLE'
+      } else if (error?.status >= 500) {
+        errorMessage = 'Erreur serveur : Veuillez réessayer dans quelques instants.'
+        errorCode = 'SERVER_ERROR'
+      }
+      
       const payload: ScanApiResponse = {
         success: false,
-        message: String(error?.message || 'Erreur de scan'),
-        code: typeof error?.code === 'string' ? error.code : undefined,
+        message: errorMessage,
+        code: errorCode,
         duplicate_type: error?.duplicate_type,
         badge_status: error?.badge_status,
         data: error?.data && typeof error.data === 'object' ? error.data : undefined
       }
 
-      const errorCode = String(payload.code || '').toUpperCase()
-      if (errorCode === 'SECOND_SCAN_ACTION_REQUIRED') {
+      const finalErrorCode = String(payload.code || '').toUpperCase()
+      if (finalErrorCode === 'SECOND_SCAN_ACTION_REQUIRED') {
         setActionDecision({
           token,
           source,
@@ -882,8 +908,11 @@ export default function ScanQRPage() {
             ? payload.data.available_actions
             : ['pause', 'depart_anticipe']
         })
-      } else if (errorCode === 'JUSTIFICATION_REQUIRED') {
-        const reason = String(payload.data?.justification_reason || payload.data?.required_reason || payload.data?.type || 'justification').trim()
+      } else if (finalErrorCode === 'JUSTIFICATION_REQUIRED' || 
+                 (payload.data?.type && payload.data.type.includes('retard') && 
+                  (finalErrorCode === 'SUCCESS' || finalErrorCode === 'ACTIVE'))) {
+        // Afficher le modal de justification si retard détecté, même si non obligatoire
+        const reason = String(payload.data?.justification_reason || payload.data?.required_reason || payload.data?.type || 'retard').trim()
         const minLength = Number(payload.data?.min_length || 5)
         const pointageType = String(payload.data?.type || '').trim().toLowerCase()
         const inferredAction: RequiredAction | undefined = pointageType === 'depart' ? 'depart_anticipe' : pointageType.startsWith('pause') ? 'pause' : scanAction
@@ -892,7 +921,9 @@ export default function ScanQRPage() {
           token,
           source,
           scanAction: inferredAction,
-          message: String(payload.message || 'Justification obligatoire.'),
+          message: finalErrorCode === 'JUSTIFICATION_REQUIRED' 
+            ? String(payload.message || 'Justification obligatoire.')
+            : `Retard détecté - Voulez-vous ajouter une justification ?`,
           reason,
           minLength: Number.isInteger(minLength) && minLength > 0 ? minLength : 5,
           value: payloadJustification,
@@ -913,28 +944,48 @@ export default function ScanQRPage() {
       setSubmitting(false)
       isSubmittingRef.current = false
     }
-  }, [loadHistory])
+  }, [loadHistory, setActionDecision, setJustificationDecision, setLastScannedUser, setLastResult, resolveResultStatus, resolveActionType])
 
-  const handleDetectedToken = useCallback((value: string, source: ScanSource) => {
-    const token = String(value || '').trim()
-    if (!token || actionDecision || justificationDecision) return
-
+  // Fonction de détection améliorée
+  const handleDetectedToken = useCallback((token: string, source: ScanSource) => {
     const now = Date.now()
-    if (lastDetectedRef.current.token === token && now - lastDetectedRef.current.at < 4000) return
-
-    lastDetectedRef.current = { token, at: now }
-    void submitScan(token, source)
-  }, [actionDecision, justificationDecision, submitScan])
-
-  const startCamera = useCallback(async () => {
-    if (!videoRef.current) {
-      setCameraError('Caméra non disponible.')
+    const lastDetected = lastDetectedRef.current
+    
+    // Éviter les doublons rapides (même token dans les 2 secondes)
+    if (token === lastDetected.token && (now - lastDetected.at) < 2000) {
       return
     }
+    
+    // Mettre à jour la référence
+    lastDetectedRef.current = { token, at: now }
+    
+    // Validation du token
+    const cleanToken = String(token || '').trim()
+    if (!cleanToken || cleanToken.length < 10) {
+      setLastResult({
+        status: 'unknown',
+        actionType: null,
+        message: 'Token QR invalide ou trop court',
+        source,
+        at: new Date().toISOString()
+      })
+      return
+    }
+    
+    // Soumettre le scan
+    void submitScan(cleanToken, source)
+  }, [submitScan, setLastResult])
 
+  // Démarrer la caméra
+  const startCamera = useCallback(async () => {
     const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
     if (!window.isSecureContext && !isLocalHost) {
       setCameraError('Caméra uniquement disponible en HTTPS ou localhost.')
+      return
+    }
+
+    if (!videoRef.current) {
+      setCameraError('Référence vidéo non disponible.')
       return
     }
 
@@ -943,7 +994,7 @@ export default function ScanQRPage() {
       stopCamera()
 
       const scanner = new QrScanner(
-        videoRef.current,
+        videoRef.current!,
         (result: any) => {
           const extracted = typeof result === 'string' ? result : result?.data
           if (extracted) handleDetectedToken(extracted, 'camera')
@@ -951,9 +1002,23 @@ export default function ScanQRPage() {
         {
           preferredCamera: 'environment',
           returnDetailedScanResult: true,
-          maxScansPerSecond: 2,
+          maxScansPerSecond: 1, // Réduit pour éviter les doublons
           highlightCodeOutline: true,
-          highlightScanRegion: true
+          highlightScanRegion: true,
+          // Améliorer la détection
+          calculateScanRegion: (video) => {
+            // Utiliser 80% de la vidéo pour la région de scan
+            const smallestDimension = Math.min(video.videoWidth, video.videoHeight);
+            const scanRegionSize = Math.floor(smallestDimension * 0.8);
+            const scanRegionX = (video.videoWidth - scanRegionSize) / 2;
+            const scanRegionY = (video.videoHeight - scanRegionSize) / 2;
+            return {
+              x: scanRegionX,
+              y: scanRegionY,
+              width: scanRegionSize,
+              height: scanRegionSize,
+            };
+          }
         }
       )
 
@@ -987,7 +1052,7 @@ export default function ScanQRPage() {
     } catch (error: any) {
       setLastResult({ status: 'unknown', actionType: null, message: error?.message || 'Impossible de lire le QR.', source: 'image', at: new Date().toISOString() })
     }
-  }, [submitScan])
+  }, [submitScan, setLastResult, setManualToken])
 
   const handleExportCsv = useCallback(() => {
     if (filteredHistory.length === 0) return
@@ -1295,25 +1360,68 @@ export default function ScanQRPage() {
                     </div>
                   )}
                 </div>
-                <div className={`text-center font-semibold ${
-                  lastResult.status === 'active' ? 'text-green-700' :
-                  lastResult.status === 'inactive' ? 'text-red-700' :
-                  lastResult.status === 'expired' ? 'text-yellow-700' :
-                  lastResult.status === 'depart_done' ? 'text-orange-700' :
-                  lastResult.status === 'action_required' ? 'text-indigo-700' :
+                <div className={`text-center ${
+                  lastResult.message?.includes('Accès refusé') || lastResult.message?.includes('403') ? 'text-red-700 font-semibold' :
+                  lastResult.message?.includes('Session expirée') || lastResult.message?.includes('401') ? 'text-orange-700 font-semibold' :
+                  lastResult.message?.includes('Service indisponible') || lastResult.message?.includes('404') ? 'text-yellow-700 font-semibold' :
+                  lastResult.message?.includes('Erreur serveur') ? 'text-red-600 font-semibold' :
                   'text-gray-700'
                 }`}>
-                  {STATUS_LABEL[lastResult.status]}
-                </div>
-                <div className={`text-sm text-center mt-2 ${
-                  lastResult.status === 'active' ? 'text-green-600' :
-                  lastResult.status === 'inactive' ? 'text-red-600' :
-                  lastResult.status === 'expired' ? 'text-yellow-600' :
-                  lastResult.status === 'depart_done' ? 'text-orange-600' :
-                  lastResult.status === 'action_required' ? 'text-indigo-600' :
-                  'text-gray-600'
-                }`}>
-                  {lastResult.message}
+                  {lastResult.message?.includes('Accès refusé') && (
+                    <div className="flex items-center justify-center mb-2">
+                      <ShieldX className="w-5 h-5 text-red-600 mr-2" />
+                      <span className="text-lg">⚠️ Erreur d'autorisation</span>
+                    </div>
+                  )}
+                  {lastResult.message?.includes('Session expirée') && (
+                    <div className="flex items-center justify-center mb-2">
+                      <LogOut className="w-5 h-5 text-orange-600 mr-2" />
+                      <span className="text-lg">🔐 Session expirée</span>
+                    </div>
+                  )}
+                  {lastResult.message?.includes('Service indisponible') && (
+                    <div className="flex items-center justify-center mb-2">
+                      <WifiOff className="w-5 h-5 text-yellow-600 mr-2" />
+                      <span className="text-lg">📡 Service indisponible</span>
+                    </div>
+                  )}
+                  {lastResult.message?.includes('Erreur serveur') && (
+                    <div className="flex items-center justify-center mb-2">
+                      <ServerCrash className="w-5 h-5 text-red-600 mr-2" />
+                      <span className="text-lg">🔴 Erreur serveur</span>
+                    </div>
+                  )}
+                  <div className="text-base leading-relaxed">
+                    {lastResult.message}
+                  </div>
+                  
+                  {/* Actions suggestions pour les erreurs spécifiques */}
+                  {lastResult.message?.includes('Accès refusé') && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <HelpCircle className="w-4 h-4 text-red-600 mr-2" />
+                        <span className="text-sm font-medium text-red-800">Que faire ?</span>
+                      </div>
+                      <ul className="text-sm text-red-700 space-y-1">
+                        <li>• Vérifiez que votre badge est valide et actif</li>
+                        <li>• Contactez votre administrateur pour vérifier votre accès</li>
+                        <li>• Assurez-vous que votre badge n'a pas expiré</li>
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {lastResult.message?.includes('Session expirée') && (
+                    <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <RefreshCw className="w-4 h-4 text-orange-600 mr-2" />
+                        <span className="text-sm font-medium text-orange-800">Solution rapide :</span>
+                      </div>
+                      <ul className="text-sm text-orange-700 space-y-1">
+                        <li>• Cliquez sur "Se déconnecter" puis reconnectez-vous</li>
+                        <li>• Votre session sera renouvelée pour 24 heures</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs text-slate-500 mt-2 text-center">
                   Source: {sourceLabel(lastResult.source)} | {formatDateTime(lastResult.at)}

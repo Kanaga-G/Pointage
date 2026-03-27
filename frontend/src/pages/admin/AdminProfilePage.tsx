@@ -9,11 +9,17 @@ import '../../styles/pages/dashboard-php.css'
 
 interface AdminProfile {
   situation_matrimoniale: string
+  contact_urgence_nom?: string
+  contact_urgence_telephone?: string
+  contact_urgence_relation?: string
+  contact_urgence_adresse_physique?: string
   id: number
   userType?: 'admin' | 'employe'
   nom?: string
   prenom?: string
   email?: string
+  email_pro?: string
+  emailPro?: string
   role?: string
   telephone?: string
   adresse?: string
@@ -23,6 +29,10 @@ interface AdminProfile {
   matricule?: string
   photo?: string
   date_embauche?: string
+  contrat_type?: string
+  contrat_duree?: string
+  contrat_pdf_url?: string
+  salaire?: number | string | null
   dateCreation?: string
   createdAt?: string
   created_at?: string
@@ -58,6 +68,7 @@ interface ProfileFormData {
   nom: string
   prenom: string
   email: string
+  email_pro: string
   telephone: string
   adresse: string
   departement: string
@@ -65,14 +76,25 @@ interface ProfileFormData {
   statut: string
   badge_id: string
   date_embauche: string
+  contrat_type: string
+  contrat_duree: string
+  contrat_pdf_url: string
+  salaire: string
   photo: string
   role: string
   matricule: string
   situation_matrimoniale: string
+  contact_urgence_nom: string
+  contact_urgence_telephone: string
+  contact_urgence_relation: string
+  contact_urgence_adresse_physique: string
 }
 
-const ADMIN_ALLOWED_ROLES = new Set(['admin', 'super_admin', 'manager', 'hr'])
+const ADMIN_ALLOWED_ROLES = new Set(['admin', 'super_admin'])
 const isBlobUrl = (value: string) => value.startsWith('blob:')
+const isAdminPortalUser = (user: any) =>
+  String(user?.userType || '').toLowerCase() === 'admin'
+  || ADMIN_ALLOWED_ROLES.has(String(user?.role || '').toLowerCase())
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super admin',
@@ -80,7 +102,6 @@ const ROLE_LABELS: Record<string, string> = {
   manager: 'Manager',
   hr: 'RH',
   chef_departement: 'Chef departement',
-  comptable: 'Comptable',
   stagiaire: 'Stagiaire',
   employe: 'Employe'
 }
@@ -118,6 +139,7 @@ const buildFormData = (profile: AdminProfile): ProfileFormData => ({
   nom: profile.nom || '',
   prenom: profile.prenom || '',
   email: profile.email || '',
+  email_pro: profile.email_pro || profile.emailPro || profile.email || '',
   telephone: profile.telephone || '',
   adresse: profile.adresse || '',
   departement: profile.departement || '',
@@ -125,10 +147,18 @@ const buildFormData = (profile: AdminProfile): ProfileFormData => ({
   statut: profile.statut || 'actif',
   badge_id: profile.badge_id || profile.badgeId || profile.matricule || generateMatricule(profile.prenom, profile.nom),
   date_embauche: toDateInputValue(profile.date_embauche),
+  contrat_type: profile.contrat_type || '',
+  contrat_duree: profile.contrat_duree || '',
+  contrat_pdf_url: profile.contrat_pdf_url || '',
+  salaire: profile.salaire === null || profile.salaire === undefined ? '' : String(profile.salaire),
   photo: profile.photo || '',
   role: profile.role || '',
   matricule: profile.matricule || generateMatricule(profile.prenom, profile.nom),
-  situation_matrimoniale: profile.situation_matrimoniale || ''
+  situation_matrimoniale: profile.situation_matrimoniale || '',
+  contact_urgence_nom: profile.contact_urgence_nom || '',
+  contact_urgence_telephone: profile.contact_urgence_telephone || '',
+  contact_urgence_relation: profile.contact_urgence_relation || '',
+  contact_urgence_adresse_physique: profile.contact_urgence_adresse_physique || ''
 })
 
 const buildBadgeQrUrl = (token: string, size = 320) => {
@@ -173,6 +203,7 @@ const AdminProfilePage: React.FC = () => {
     nom: '',
     prenom: '',
     email: '',
+    email_pro: '',
     telephone: '',
     adresse: '',
     departement: '',
@@ -180,10 +211,18 @@ const AdminProfilePage: React.FC = () => {
     statut: 'actif',
     badge_id: '',
     date_embauche: '',
+    contrat_type: '',
+    contrat_duree: '',
+    contrat_pdf_url: '',
+    salaire: '',
     photo: '',
     role: '',
     matricule: '',
-    situation_matrimoniale: ''
+    situation_matrimoniale: '',
+    contact_urgence_nom: '',
+    contact_urgence_telephone: '',
+    contact_urgence_relation: '',
+    contact_urgence_adresse_physique: ''
   })
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -393,8 +432,7 @@ const AdminProfilePage: React.FC = () => {
       return
     }
 
-    const role = String(user.role || '').toLowerCase()
-    if (!ADMIN_ALLOWED_ROLES.has(role)) {
+    if (!isAdminPortalUser(user)) {
       navigate('/employee', { replace: true })
       return
     }
@@ -489,10 +527,23 @@ const AdminProfilePage: React.FC = () => {
         poste: formData.poste.trim(),
         statut: formData.statut.trim(),
         badge_id: formData.badge_id.trim(),
-        photo: formData.photo ? formData.photo.trim() : null
+        photo: formData.photo ? formData.photo.trim() : null,
+        situation_matrimoniale: formData.situation_matrimoniale.trim() || null,
+        contact_urgence_nom: formData.contact_urgence_nom.trim() || null,
+        contact_urgence_telephone: formData.contact_urgence_telephone.trim() || null,
+        contact_urgence_relation: formData.contact_urgence_relation.trim() || null,
+        contact_urgence_adresse_physique: formData.contact_urgence_adresse_physique.trim() || null
       }
-      if (canEditHireDate) {
+      if (canEditHireDate || canEditProfessionalInfo) {
         payload.date_embauche = formData.date_embauche || null
+      }
+
+      if (canEditProfessionalInfo) {
+        payload.email_pro = formData.email_pro.trim() || null
+        payload.contrat_type = formData.contrat_type.trim() || null
+        payload.contrat_duree = formData.contrat_duree.trim() || null
+        payload.contrat_pdf_url = formData.contrat_pdf_url.trim() || null
+        payload.salaire = formData.salaire.trim() || null
       }
 
       const result = await updateProfile(payload)
@@ -751,6 +802,47 @@ const AdminProfilePage: React.FC = () => {
                     <option value="veuf(ve)">Veuf(ve)</option>
                   </select>
                 </div>
+                <div>
+                  <label className="xp-form-label">Contact urgence (nom)</label>
+                  <input
+                    name="contact_urgence_nom"
+                    value={formData.contact_urgence_nom}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div>
+                  <label className="xp-form-label">Contact urgence (téléphone)</label>
+                  <input
+                    name="contact_urgence_telephone"
+                    value={formData.contact_urgence_telephone}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div>
+                  <label className="xp-form-label">Contact urgence (relation)</label>
+                  <input
+                    name="contact_urgence_relation"
+                    value={formData.contact_urgence_relation}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="xp-form-label">Contact urgence (adresse)</label>
+                  <textarea
+                    name="contact_urgence_adresse_physique"
+                    value={formData.contact_urgence_adresse_physique}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    rows={2}
+                    className="xp-form-input"
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <label className="xp-form-label">Adresse personnelle</label>
                   <textarea
@@ -789,6 +881,16 @@ const AdminProfilePage: React.FC = () => {
                   </select>
                 </div>
                 <div>
+                  <label className="xp-form-label">Email professionnel</label>
+                  <input
+                    name="email_pro"
+                    value={formData.email_pro}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div>
                   <label className="xp-form-label">Departement</label>
                   <input
                     name="departement"
@@ -814,6 +916,46 @@ const AdminProfilePage: React.FC = () => {
                     type="date"
                     name="date_embauche"
                     value={formData.date_embauche}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div>
+                  <label className="xp-form-label">Salaire</label>
+                  <input
+                    name="salaire"
+                    value={formData.salaire}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div>
+                  <label className="xp-form-label">Type de contrat</label>
+                  <input
+                    name="contrat_type"
+                    value={formData.contrat_type}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div>
+                  <label className="xp-form-label">Durée de contrat</label>
+                  <input
+                    name="contrat_duree"
+                    value={formData.contrat_duree}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    className="xp-form-input"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="xp-form-label">Lien contrat (PDF)</label>
+                  <input
+                    name="contrat_pdf_url"
+                    value={formData.contrat_pdf_url}
                     onChange={handleInputChange}
                     disabled={!editing}
                     className="xp-form-input"
@@ -880,7 +1022,25 @@ const AdminProfilePage: React.FC = () => {
                 <div className="php-list-item">
                   <div>
                     <strong>Email professionnel</strong>
-                    <small>{profile?.email || '-'}</small>
+                    <small>{profile?.email_pro || profile?.emailPro || profile?.email || '-'}</small>
+                  </div>
+                </div>
+                <div className="php-list-item">
+                  <div>
+                    <strong>Type de contrat</strong>
+                    <small>{profile?.contrat_type || '-'}</small>
+                  </div>
+                </div>
+                <div className="php-list-item">
+                  <div>
+                    <strong>Durée de contrat</strong>
+                    <small>{profile?.contrat_duree || '-'}</small>
+                  </div>
+                </div>
+                <div className="php-list-item">
+                  <div>
+                    <strong>Salaire</strong>
+                    <small>{profile?.salaire !== null && profile?.salaire !== undefined && String(profile?.salaire).trim() !== '' ? `${profile?.salaire}` : '-'}</small>
                   </div>
                 </div>
                 <div className="php-list-item">

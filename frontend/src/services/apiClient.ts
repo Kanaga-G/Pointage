@@ -9,6 +9,16 @@ const resolveDefaultBaseUrl = (): string => {
   if (!rawEnvValue) return '/api';
 
   const normalized = rawEnvValue.replace(/\/+$/, '');
+  const isBrowser = typeof window !== 'undefined';
+  const runningOnLocalhost = isBrowser
+    ? ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    : false;
+  const envTargetsLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(normalized);
+
+  // Prevent production builds from using a localhost API URL accidentally.
+  if (isBrowser && !runningOnLocalhost && envTargetsLocalhost) {
+    return '/api';
+  }
 
   if (/^https?:\/\//i.test(normalized)) {
     return /\/api$/i.test(normalized) ? normalized : `${normalized}/api`;

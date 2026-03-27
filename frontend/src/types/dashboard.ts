@@ -48,6 +48,7 @@ export interface Demande {
   statut: 'en_attente' | 'approuve' | 'rejete'
   date_demande: string
   traite_par?: string
+  traite_par_id?: number
   date_traitement?: string
   commentaire?: string
 }

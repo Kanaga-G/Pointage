@@ -19,6 +19,7 @@ export default function PermissionGuard({
   fallback 
 }: PermissionGuardProps) {
   const { user } = useAuth();
+  const effectiveRole = (user?.role_metier || user?.role || 'employe') as string;
 
   // Si l'utilisateur n'est pas connecté, rediriger vers login
   if (!user) {
@@ -26,7 +27,7 @@ export default function PermissionGuard({
   }
 
   // Vérifier la permission spécifique
-  if (permission && !RoleService.hasPermission(user.role, permission)) {
+  if (permission && !RoleService.hasPermission(effectiveRole, permission)) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
@@ -40,7 +41,7 @@ export default function PermissionGuard({
             Vous n'avez pas les permissions nécessaires pour accéder à cette page.
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            Rôle actuel: {user.role} | Permission requise: {permission}
+            Rôle actuel: {effectiveRole} | Permission requise: {permission}
           </p>
           <button
             onClick={() => window.history.back()}
@@ -54,7 +55,7 @@ export default function PermissionGuard({
   }
 
   // Vérifier l'accès à la ressource
-  if (resource && !RoleService.canAccessResource(user.role, resource, action)) {
+  if (resource && !RoleService.canAccessResource(effectiveRole, resource, action)) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
@@ -87,20 +88,21 @@ export default function PermissionGuard({
 // Hook personnalisé pour vérifier les permissions
 export function usePermissions() {
   const { user } = useAuth();
+  const effectiveRole = (user?.role_metier || user?.role || 'employe') as string;
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    return RoleService.hasPermission(user.role, permission);
+    return RoleService.hasPermission(effectiveRole, permission);
   };
 
   const canAccess = (resource: string, action: string = 'view'): boolean => {
     if (!user) return false;
-    return RoleService.canAccessResource(user.role, resource, action);
+    return RoleService.canAccessResource(effectiveRole, resource, action);
   };
 
   const getAvailablePanels = () => {
     if (!user) return [];
-    return RoleService.getAvailablePanels(user.role);
+    return RoleService.getAvailablePanels(effectiveRole);
   };
 
   const isAdmin = (): boolean => {
@@ -108,11 +110,11 @@ export function usePermissions() {
   };
 
   const isManager = (): boolean => {
-    return user?.role === 'manager' || user?.role === 'admin';
+    return user?.role_metier === 'manager' || user?.role === 'admin';
   };
 
   const isHR = (): boolean => {
-    return user?.role === 'hr' || user?.role === 'admin';
+    return user?.role_metier === 'hr' || user?.role === 'admin';
   };
 
   return {
@@ -122,6 +124,6 @@ export function usePermissions() {
     isAdmin,
     isManager,
     isHR,
-    userRole: user?.role || 'guest'
+    userRole: effectiveRole || 'guest'
   };
 }

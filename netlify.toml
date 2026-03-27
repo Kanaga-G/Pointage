@@ -7,11 +7,11 @@
   NODE_VERSION = "20"
   # Variables d'environnement pour le build (sans valeurs secrètes)
   NODE_ENV = "production"
-  VITE_API_URL = "https://your-backend-url.onrender.com"
+  VITE_API_URL = "https://registre-employe.onrender.com/api"
 
 [[redirects]]
   from = "/api/*"
-  to = "https://your-backend-url.onrender.com/api/:splat"
+  to = "https://registre-employe.onrender.com/api/:splat"
   status = 200
 
 [[redirects]]

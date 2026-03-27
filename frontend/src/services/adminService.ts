@@ -63,6 +63,8 @@ export interface Demande {
   statut: "en_attente" | "approuve" | "rejete"
   commentaire?: string
   traite_par?: number | null
+  traite_par_nom?: string | null
+  traite_par_role?: string | null
   date_traitement?: string | null
   heures_ecoulees?: number
   photo?: string
@@ -439,7 +441,7 @@ class AdminService {
       
       return response
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des temps totaux:', error)
+      console.error('Erreur lors de la récupération des temps totaux:', error)
       throw error
     }
   }
@@ -570,6 +572,9 @@ class AdminService {
             employeId ? `EMP-${String(employeId).padStart(4, '0')}` : ''
           ].map((value) => String(value ?? '').trim()).find(isUsableValue) || ''
 
+          const traiteParNom = String(raw?.traite_par_nom ?? raw?.traiteParNom ?? '').trim()
+          const traiteParRole = String(raw?.traite_par_role ?? raw?.traiteParRole ?? '').trim()
+
           return {
             id: Number(raw?.id || 0),
             employe_id: employeId,
@@ -587,6 +592,8 @@ class AdminService {
             statut: normalizeStatut(raw?.statut),
             commentaire: String(raw?.commentaire ?? raw?.comment ?? '').trim() || undefined,
             traite_par: Number(raw?.traite_par ?? raw?.traitePar ?? 0) || null,
+            traite_par_nom: traiteParNom || null,
+            traite_par_role: traiteParRole || null,
             date_traitement: String(raw?.date_traitement ?? raw?.dateTraitement ?? '').trim() || null,
             heures_ecoulees: Number(raw?.heures_ecoulees ?? raw?.elapsed_hours ?? 0) || undefined,
             photo: String(raw?.photo ?? raw?.employe?.photo ?? '').trim() || undefined,
@@ -609,7 +616,7 @@ class AdminService {
         per_page: perPage
       }
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des demandes:', error)
+      console.error('Erreur lors de la récupération des demandes:', error)
       throw error
     }
   }
@@ -622,31 +629,11 @@ class AdminService {
       if (params.date) searchParams.append('date', params.date)
       const query = searchParams.toString()
 
-      const candidates = [
-        query ? `notifications?${query}` : 'notifications',
-        query ? `admin/notifications?${query}` : 'admin/notifications',
-        query ? `notifications/admin?${query}` : 'notifications/admin',
-        query ? `admin/notifications/list?${query}` : 'admin/notifications/list'
-      ]
+      // Utiliser seulement l'endpoint qui existe dans le backend
+      const endpoint = query ? `notifications?${query}` : 'notifications'
 
-      let source: any = null
-
-      for (const endpoint of candidates) {
-        try {
-          const response = await apiClient.get<any>(endpoint)
-          source = response?.data && typeof response.data === 'object' ? response.data : response
-          break
-        } catch (candidateError: any) {
-          const status = Number(candidateError?.status || 0)
-          if (status === 404 || status === 500 || status === 502 || status === 503 || status === 504) {
-            continue
-          }
-          if (!status) {
-            continue
-          }
-          throw candidateError
-        }
-      }
+      const response = await apiClient.get<any>(endpoint)
+      const source = response?.data && typeof response.data === 'object' ? response.data : response
 
       if (!source) {
         return {
@@ -821,7 +808,7 @@ class AdminService {
         en_retard: 0
       }
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des statistiques des demandes:', error)
+      console.error('Erreur lors de la récupération des statistiques des demandes:', error)
       throw error
     }
   }
@@ -963,7 +950,7 @@ class AdminService {
         per_page: Number(params.per_page || 10)
       }
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des employÃ©s:', error)
+      console.error('Erreur lors de la récupération des employés:', error)
       throw error
     }
   }
@@ -979,7 +966,7 @@ class AdminService {
       if (response?.data) return response.data as Employe
       throw new Error(response?.message || 'Creation employe impossible')
     } catch (error) {
-      console.error('Erreur lors de la crÃ©ation de l\'employÃ©:', error)
+      console.error('Erreur lors de la création de l\'employé:', error)
       throw error
     }
   }
@@ -995,7 +982,7 @@ class AdminService {
       if (response?.data) return response.data as Employe
       throw new Error(response?.message || 'Mise a jour employe impossible')
     } catch (error) {
-      console.error('Erreur lors de la mise Ã  jour de l\'employÃ©:', error)
+      console.error('Erreur lors de la mise Ã  jour de l\'employé:', error)
       throw error
     }
   }
@@ -1005,7 +992,7 @@ class AdminService {
       await apiClient.delete<any>(`admin/employes/${id}`)
       return true
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'employÃ©:', error)
+      console.error('Erreur lors de la suppression de l\'employé:', error)
       throw error
     }
   }
@@ -1021,7 +1008,7 @@ class AdminService {
       )
       return response.data || { admins: [], is_super_admin: false }
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des administrateurs:', error)
+      console.error('Erreur lors de la récupération des administrateurs:', error)
       throw error
     }
   }
@@ -1034,7 +1021,7 @@ class AdminService {
       )
       return response.data!
     } catch (error) {
-      console.error('Erreur lors de la crÃ©ation de l\'administrateur:', error)
+      console.error('Erreur lors de la création de l\'administrateur:', error)
       throw error
     }
   }
@@ -1078,7 +1065,7 @@ class AdminService {
       
       return response
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des retards:', error)
+      console.error('Erreur lors de la récupération des retards:', error)
       throw error
     }
   }
@@ -1105,7 +1092,7 @@ class AdminService {
       const response = await apiClient.get<ApiResponse<string[]>>('get_departements')
       return response.data || []
     } catch (error) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des dÃ©partements:', error)
+      console.error('Erreur lors de la récupération des départements:', error)
       return []
     }
   }
@@ -1149,7 +1136,5 @@ class AdminService {
 // Export singleton instance
 export const adminService = new AdminService()
 export default adminService
-
-
 
 

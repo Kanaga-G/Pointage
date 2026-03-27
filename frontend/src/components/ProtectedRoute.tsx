@@ -8,7 +8,6 @@ type AppRole =
   | 'manager'
   | 'hr'
   | 'chef_departement'
-  | 'comptable'
   | 'stagiaire'
   | 'employe'
 
@@ -28,6 +27,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
   const allowedRoles = requiredRoles?.length ? requiredRoles : requiredRole ? [requiredRole] : null
+  const accessRole = (user?.role || null) as AppRole | null
+  const metierRole = ((user as any)?.role_metier || null) as AppRole | null
+  const userRoles = [accessRole, metierRole].filter(Boolean) as AppRole[]
 
   if (isLoading) {
     return (
@@ -44,11 +46,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />
   }
 
-  if (allowedRoles && (!user?.role || !allowedRoles.includes(user.role as AppRole))) {
-    if (user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'manager' || user?.role === 'hr') {
+  if (allowedRoles && (userRoles.length === 0 || !allowedRoles.some((role) => userRoles.includes(role)))) {
+    if (accessRole === 'admin' || accessRole === 'super_admin' || metierRole === 'manager' || metierRole === 'hr') {
       return <Navigate to="/admin" replace />
     }
-    if (user?.role === 'employe' || user?.role === 'chef_departement' || user?.role === 'comptable' || user?.role === 'stagiaire') {
+    if (accessRole === 'employe') {
       return <Navigate to="/employee" replace />
     }
     return <Navigate to="/login" replace />

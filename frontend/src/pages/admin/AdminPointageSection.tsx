@@ -57,20 +57,29 @@ const getPointageStatusMeta = (pointage: PointageEntry, workStartTime: string = 
   if (isRetard) {
     return {
       label: `Retard ${pointage.retard_minutes ? `(${pointage.retard_minutes} min)` : ''}`,
-      badgeClassName: 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+      badgeClassName: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+      icon: <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
     }
   }
   
   if (isDepartAnticipe) {
     return {
       label: 'Départ anticipé',
-      badgeClassName: 'bg-orange-100 text-orange-800 border border-orange-200'
+      badgeClassName: 'bg-orange-100 text-orange-800 border border-orange-200',
+      icon: <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
     }
   }
   
   return {
     label: 'À l\'heure',
-    badgeClassName: 'bg-green-100 text-green-800 border border-green-200'
+    badgeClassName: 'bg-green-100 text-green-800 border border-green-200',
+    icon: <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   }
 }
 
@@ -401,58 +410,88 @@ export default function AdminPointageSection({ pointages, workStartTime = '09:00
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {/* Arrivée */}
-                        <div className="bg-white rounded-lg border border-green-200 p-4">
+                        <div className="bg-white rounded-lg border-l-4 border-green-500 shadow-sm p-4 hover:shadow-md transition-shadow">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Arrivée</p>
-                              <p className="text-lg font-semibold text-gray-900">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M12 5l7 7-7 7" />
+                                  </svg>
+                                </div>
+                                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arrivée</p>
+                              </div>
+                              <p className="text-2xl font-bold text-gray-900">
                                 {dayPointage.arrivee
                                   ? (dayPointage.arrivee.arrivee || formatTime(dayPointage.arrivee.date_heure || ''))
                                   : 'Non pointée'}
                               </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {dayPointage.arrivee ? formatDate(dayPointage.date) : 'Aujourd\'hui'}
+                              </p>
                             </div>
                             {arriveeMeta ? (
-                              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${arriveeMeta.badgeClassName}`}>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${arriveeMeta.badgeClassName} shadow-sm`}>
+                                {arriveeMeta.icon}
                                 {arriveeMeta.label}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-600">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                                 Absent
                               </span>
                             )}
                           </div>
                           {dayPointage.arrivee?.commentaire && (
-                            <p className="mt-2 text-xs text-gray-600">
-                              Justification: {dayPointage.arrivee.commentaire}
-                            </p>
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <p className="text-xs text-gray-600 font-medium mb-1">Justification:</p>
+                              <p className="text-xs text-gray-700">{dayPointage.arrivee.commentaire}</p>
+                            </div>
                           )}
                         </div>
 
                         {/* Départ */}
-                        <div className="bg-white rounded-lg border border-blue-200 p-4">
+                        <div className="bg-white rounded-lg border-l-4 border-blue-500 shadow-sm p-4 hover:shadow-md transition-shadow">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
-                              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Départ</p>
-                              <p className="text-lg font-semibold text-gray-900">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 12H5M12 19l7-7-7-7" />
+                                  </svg>
+                                </div>
+                                <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Départ</p>
+                              </div>
+                              <p className="text-2xl font-bold text-gray-900">
                                 {dayPointage.depart
                                   ? (dayPointage.depart.depart || formatTime(dayPointage.depart.date_heure || ''))
                                   : dayPointage.arrivee ? 'Non pointé' : 'Non pointé (pas d\'arrivée)'}
                               </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {dayPointage.depart ? formatDate(dayPointage.date) : 'Aujourd\'hui'}
+                              </p>
                             </div>
                             {departMeta ? (
-                              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${departMeta.badgeClassName}`}>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${departMeta.badgeClassName} shadow-sm`}>
+                                {departMeta.icon}
                                 {departMeta.label}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-600">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                                 {dayPointage.arrivee ? 'Absent' : 'Absent'}
                               </span>
                             )}
                           </div>
                           {dayPointage.depart?.commentaire && (
-                            <p className="mt-2 text-xs text-gray-600">
-                              Justification: {dayPointage.depart.commentaire}
-                            </p>
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <p className="text-xs text-gray-600 font-medium mb-1">Justification:</p>
+                              <p className="text-xs text-gray-700">{dayPointage.depart.commentaire}</p>
+                            </div>
                           )}
                         </div>
                       </div>

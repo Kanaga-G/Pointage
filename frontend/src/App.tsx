@@ -36,7 +36,7 @@ const adminSectionRoutes = ['demandes', 'calendrier']
 const employeeSectionRoutes = ['pointage', 'historique', 'demandes', 'profil', 'calendrier']
 const employeLegacyRoutes = ['dashboard', 'pointage', 'historique', 'demandes', 'profil', 'calendrier', 'badge', 'heures', 'retards', 'settings', 'parametres', 'rapports']
 const adminPortalRoles = ['admin', 'super_admin', 'manager', 'hr'] as const
-const employeePortalRoles = ['employe', 'chef_departement', 'comptable', 'stagiaire'] as const
+const employeePortalRoles = ['employe', 'chef_departement', 'stagiaire'] as const
 const mapLegacyEmployePath = (path: string) => {
   if (path === 'parametres') return 'settings'
   return path

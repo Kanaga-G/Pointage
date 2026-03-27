@@ -101,8 +101,8 @@ async function main() {
   await client.connect()
 
   try {
-    const superAdminPassword = await bcrypt.hash('SuperAdmin@2026', 10)
-    const employePassword = await bcrypt.hash('Employe@2026', 10)
+    const superAdminPassword = await bcrypt.hash('admin123', 10)
+    const employePassword = await bcrypt.hash('employe123', 10)
 
     const superAdmin = await upsertAdmin(client, {
       nom: 'Diallo',
@@ -131,7 +131,7 @@ async function main() {
         nom: 'Coulibaly',
         prenom: 'Moussa',
         email: 'moussa.coulibaly@xpertpro.local',
-        role: 'manager',
+        role: 'employe',
         poste: 'Manager Operationnel',
         departement: 'operations',
         telephone: '700000012'
@@ -140,7 +140,7 @@ async function main() {
         nom: 'Keita',
         prenom: 'Fatou',
         email: 'fatou.keita@xpertpro.local',
-        role: 'chef_departement',
+        role: 'employe',
         poste: 'Chef de Departement IT',
         departement: 'informatique',
         telephone: '700000013'
@@ -149,7 +149,7 @@ async function main() {
         nom: 'Sissoko',
         prenom: 'Ibrahim',
         email: 'ibrahim.sissoko@xpertpro.local',
-        role: 'comptable',
+        role: 'employe',
         poste: 'Comptable',
         departement: 'finance',
         telephone: '700000014'
@@ -158,7 +158,7 @@ async function main() {
         nom: 'Camara',
         prenom: 'Awa',
         email: 'awa.camara@xpertpro.local',
-        role: 'stagiaire',
+        role: 'employe',
         poste: 'Stagiaire Developpement',
         departement: 'informatique',
         telephone: '700000015'
@@ -183,8 +183,8 @@ async function main() {
 
     console.log('Compte super_admin pret:', superAdmin)
     console.log('Employes prets:', createdEmployes)
-    console.log('Mot de passe super_admin: SuperAdmin@2026')
-    console.log('Mot de passe employes: Employe@2026')
+    console.log('Mot de passe super_admin: admin123')
+    console.log('Mot de passe employes: employe123')
   } finally {
     await client.end()
   }

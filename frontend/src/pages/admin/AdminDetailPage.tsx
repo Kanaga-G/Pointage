@@ -60,7 +60,7 @@ interface AdminFormData {
   statut: string
   contrat_type: string
   contrat_duree: string
-  contrat_pdf_url: string
+  contrat_pdf_url?: string
   salaire: string
   contact_urgence_nom: string
   contact_urgence_telephone: string
@@ -94,7 +94,6 @@ const ROLE_LABELS: Record<string, string> = {
   manager: 'Manager',
   hr: 'RH',
   chef_departement: 'Chef de département',
-  comptable: 'Comptable',
   employe: 'Employé',
   stagiaire: 'Stagiaire'
 }
@@ -223,6 +222,7 @@ const AdminDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [contractFileName, setContractFileName] = useState<string>('')
+  const [idValidationError, setIdValidationError] = useState<string | null>(null)
 
   const contractFileInputRef = useRef<HTMLInputElement | null>(null)
   const canEditProfessional = useMemo(() => {
@@ -233,6 +233,11 @@ const AdminDetailPage: React.FC = () => {
   const canEditPersonal = useMemo(() => {
     const role = String(user?.role || '').toLowerCase()
     return ADMIN_EDIT_ROLES.has(role) && role !== 'super_admin'
+  }, [user?.role])
+
+  const canEditId = useMemo(() => {
+    const role = String(user?.role || '').toLowerCase()
+    return role === 'super_admin'
   }, [user?.role])
 
   const resolvedPhotoUrl = useMemo(() => uploadService.resolvePhotoUrl(admin?.photo || ''), [admin?.photo])
@@ -433,16 +438,46 @@ const AdminDetailPage: React.FC = () => {
     }
   }
 
+  const validateIdUniqueness = async (newId: number, currentAdminId: number): Promise<boolean> => {
+    try {
+      const response = await apiClient.get<{ success: boolean; admins?: any[]; message?: string }>('/admins')
+      if (response?.success && Array.isArray(response.admins)) {
+        const duplicate = response.admins.find(admin => admin.id === newId && admin.id !== currentAdminId)
+        if (duplicate) {
+          setIdValidationError(`Cet ID admin (${newId}) est déjà attribué à ${duplicate.prenom} ${duplicate.nom}.`)
+          return false
+        }
+      }
+      setIdValidationError(null)
+      return true
+    } catch (error) {
+      console.error('Erreur validation ID:', error)
+      setIdValidationError('Impossible de vérifier l\'unicité de l\'ID.')
+      return false
+    }
+  }
+
   const handleSave = async () => {
     if (!admin) return
 
     try {
       setSaving(true)
       setError(null)
+      setIdValidationError(null)
 
       if (!canEditProfessional) {
         setError('Vous n avez pas les droits pour modifier les informations professionnelles.')
         return
+      }
+
+      // Validate ID uniqueness if ID is being changed and user has permission
+      const newId = Number(formData.id)
+      if (canEditId && newId !== admin.id) {
+        const isIdUnique = await validateIdUniqueness(newId, admin.id)
+        if (!isIdUnique) {
+          setSaving(false)
+          return
+        }
       }
 
       if (uploadingContract) {
@@ -453,6 +488,7 @@ const AdminDetailPage: React.FC = () => {
 
       const payload = {
         ...formData,
+        id: newId,
         salaire: formData.salaire === '' ? null : Number(formData.salaire)
       }
 
@@ -522,6 +558,7 @@ const AdminDetailPage: React.FC = () => {
     }
     setError(null)
     setSuccess(null)
+    setIdValidationError(null)
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -545,14 +582,46 @@ const AdminDetailPage: React.FC = () => {
     const file = e.target.files?.[0]
     if (!file || !admin) return
 
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      setError('Veuillez sélectionner un fichier PDF.')
+      return
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Le fichier PDF ne doit pas dépasser 10MB.')
+      return
+    }
+
     try {
       setUploadingContract(true)
-      // Pour l'instant, on désactive l'upload de contrat pour les admins
-      // TODO: Implémenter un endpoint spécifique pour les contrats admins
-      setError('Upload contrat non encore implémenté pour les admins.')
+      setError(null)
+
+      const formData = new FormData()
+      formData.append('contract', file)
+      formData.append('adminId', String(admin.id))
+
+      const response = await apiClient.post<FormData, { success: boolean; contract_url?: string; message?: string }>(
+        '/admins/upload-contract',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
+
+      if (response?.success && response.contract_url) {
+        setFormData(prev => ({ ...prev, contrat_pdf_url: response.contract_url }))
+        setContractFileName(file.name)
+        setSuccess('Contrat téléchargé avec succès.')
+      } else {
+        throw new Error(response?.message || 'Échec du téléchargement du contrat')
+      }
     } catch (uploadError: any) {
       console.error('Erreur upload contrat:', uploadError)
-      setError('Impossible de telecharger le contrat.')
+      setError(uploadError?.message || 'Impossible de télécharger le contrat.')
     } finally {
       setUploadingContract(false)
     }
@@ -659,6 +728,12 @@ const AdminDetailPage: React.FC = () => {
           </section>
         ) : null}
 
+        {idValidationError ? (
+          <section className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+            {idValidationError}
+          </section>
+        ) : null}
+
         {success ? (
           <section className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
             {success}
@@ -739,11 +814,15 @@ const AdminDetailPage: React.FC = () => {
               <label className="xp-form-label">ID admin</label>
               <input
                 type="text"
-                value={formData.id ? String(formData.id) : '-'}
-                disabled
+                name="id"
+                value={formData.id ? String(formData.id) : ''}
+                onChange={handleInputChange}
                 className="xp-form-input"
+                disabled={!isEditing || !canEditId}
               />
-              <p className="text-xs text-gray-500 mt-1">Identifiant interne non modifiable.</p>
+              {!canEditId && (
+                <p className="text-xs text-gray-500 mt-1">Identifiant modifiable uniquement par le super admin.</p>
+              )}
             </div>
 
             <div>
@@ -754,8 +833,11 @@ const AdminDetailPage: React.FC = () => {
                 value={formData.matricule}
                 onChange={handleInputChange}
                 className="xp-form-input"
-                disabled={!canEditPersonal}
+                disabled={!isEditing || !canEditProfessional}
               />
+              {!canEditProfessional && (
+                <p className="text-xs text-gray-500 mt-1">Modifiable uniquement par les administrateurs autorisés.</p>
+              )}
             </div>
 
             <div>
@@ -1013,22 +1095,76 @@ const AdminDetailPage: React.FC = () => {
 
             <div className="md:col-span-2">
               <label className="xp-form-label">Contrat PDF</label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {formData.contrat_pdf_url ? (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                    <span className="text-sm text-gray-700 truncate flex-1">
-                      {extractFileName(formData.contrat_pdf_url)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => window.open(formData.contrat_pdf_url, '_blank')}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                    >
-                      Voir
-                    </button>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {extractFileName(formData.contrat_pdf_url)}
+                          </p>
+                          <p className="text-xs text-gray-500">Contrat de travail</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (formData.contrat_pdf_url) {
+                              window.open(formData.contrat_pdf_url, '_blank')
+                            }
+                          }}
+                          className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors flex items-center space-x-1"
+                          disabled={!formData.contrat_pdf_url}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>Aperçu</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (formData.contrat_pdf_url) {
+                              const link = document.createElement('a')
+                              link.href = formData.contrat_pdf_url
+                              link.download = extractFileName(formData.contrat_pdf_url)
+                              document.body.appendChild(link)
+                              link.click()
+                              document.body.removeChild(link)
+                            }
+                          }}
+                          className="px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors flex items-center space-x-1"
+                          disabled={!formData.contrat_pdf_url}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span>Télécharger</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Taille maximale: 10MB • Format: PDF
+                    </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">Aucun contrat PDF telecharge</div>
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <div className="w-12 h-12 mx-auto bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-1">Aucun contrat PDF téléchargé</p>
+                    <p className="text-xs text-gray-400">Téléchargez le contrat de travail de l'administrateur</p>
+                  </div>
                 )}
                 
                 {isEditing && canEditProfessional && (
@@ -1039,6 +1175,7 @@ const AdminDetailPage: React.FC = () => {
                       onChange={handleContractUpload}
                       className="hidden"
                       id="contract-upload"
+                      disabled={uploadingContract}
                     />
                     <label
                       htmlFor="contract-upload"
@@ -1048,8 +1185,14 @@ const AdminDetailPage: React.FC = () => {
                           : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                       }`}
                     >
-                      {uploadingContract ? 'Upload...' : 'Changer le contrat'}
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      {uploadingContract ? 'Téléchargement...' : formData.contrat_pdf_url ? 'Remplacer le contrat' : 'Télécharger un contrat'}
                     </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {uploadingContract ? 'Veuillez patienter...' : 'PDF uniquement • Maximum 10MB'}
+                    </p>
                   </div>
                 )}
               </div>

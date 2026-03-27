@@ -45,7 +45,6 @@ const FALLBACK_ADMIN_ROLES: RoleDefinition[] = [
   { id: 'manager', label: 'Manager', scope: 'admin' },
   { id: 'hr', label: 'RH', scope: 'admin' },
   { id: 'chef_departement', label: 'Chef de departement', scope: 'admin' },
-  { id: 'comptable', label: 'Comptable', scope: 'admin' }
 ]
 
 const isBlobUrl = (value: string) => value.startsWith('blob:')
@@ -55,7 +54,6 @@ const PREVIEW_ROLE_PREFIX: Record<string, string> = {
   manager: 'MGR',
   hr: 'RHS',
   chef_departement: 'CHD',
-  comptable: 'CPT',
   stagiaire: 'STG',
   employe: 'EMP'
 }

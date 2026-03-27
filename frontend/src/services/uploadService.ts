@@ -5,11 +5,13 @@ const MAX_CONTRACT_PDF_SIZE_BYTES = 10 * 1024 * 1024
 const ACCEPTED_PROFILE_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const ACCEPTED_CONTRACT_PDF_TYPES = new Set(['application/pdf'])
 
-const getDirectApiOrigin = () => {
-  if (typeof window === 'undefined') return 'http://localhost:3003'
-  const protocol = window.location.protocol || 'http:'
-  const hostname = window.location.hostname || 'localhost'
-  return `${protocol}//${hostname}:3003`
+const getDirectApiOrigin = (): string | null => {
+  const rawApiUrl = String(import.meta.env?.VITE_API_URL ?? '').trim()
+  if (!rawApiUrl) return null
+
+  const normalized = rawApiUrl.replace(/\/+$/, '')
+  if (!/^https?:\/\//i.test(normalized)) return null
+  return normalized.replace(/\/api$/i, '')
 }
 
 const DIRECT_API_ORIGIN = getDirectApiOrigin()
@@ -37,8 +39,10 @@ class UploadService {
     const candidateEndpoints = [
       '/api/uploads/profile-photo',
       '/api/upload/profile-photo',
-      `${DIRECT_API_ORIGIN}/api/uploads/profile-photo`,
-      `${DIRECT_API_ORIGIN}/api/upload/profile-photo`
+      ...(DIRECT_API_ORIGIN ? [
+        `${DIRECT_API_ORIGIN}/api/uploads/profile-photo`,
+        `${DIRECT_API_ORIGIN}/api/upload/profile-photo`
+      ] : [])
     ]
     let lastError: unknown = null
 
@@ -84,8 +88,10 @@ class UploadService {
     const candidateEndpoints = [
       '/api/uploads/contract-pdf',
       '/api/upload/contract-pdf',
-      `${DIRECT_API_ORIGIN}/api/uploads/contract-pdf`,
-      `${DIRECT_API_ORIGIN}/api/upload/contract-pdf`
+      ...(DIRECT_API_ORIGIN ? [
+        `${DIRECT_API_ORIGIN}/api/uploads/contract-pdf`,
+        `${DIRECT_API_ORIGIN}/api/upload/contract-pdf`
+      ] : [])
     ]
 
     let lastError: unknown = null

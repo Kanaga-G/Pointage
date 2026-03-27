@@ -79,6 +79,16 @@ const AdminSettingsPage: React.FC = () => {
   const [currentPinInfo, setCurrentPinInfo] = useState<{ pin: string; isDefault: boolean } | null>(null)
   const [showPinForm, setShowPinForm] = useState(false)
 
+  // États pour la gestion des départements et postes
+  const [departements, setDepartements] = useState<string[]>([])
+  const [postes, setPostes] = useState<string[]>([])
+  const [loadingDepartements, setLoadingDepartements] = useState(false)
+  const [loadingPostes, setLoadingPostes] = useState(false)
+  const [newDepartement, setNewDepartement] = useState('')
+  const [newPoste, setNewPoste] = useState('')
+  const [showAddDepartement, setShowAddDepartement] = useState(false)
+  const [showAddPoste, setShowAddPoste] = useState(false)
+
   const isUnauthorizedError = useCallback((err: unknown) => {
     const errorPayload = err as { status?: number; message?: string }
     const status = Number(errorPayload?.status || 0)
@@ -92,10 +102,12 @@ const AdminSettingsPage: React.FC = () => {
       setLoading(true)
       setError(null)
 
-      const [profileResponse, settingsResponse, pinResponse] = await Promise.all([
+      const [profileResponse, settingsResponse, pinResponse, departementsResponse, postesResponse] = await Promise.all([
         apiClient.get<{ success: boolean; user?: AdminProfile; message?: string }>('/api/auth/validate'),
         settingsService.getMySettings(),
-        scanSecurityService.getCurrentPIN().catch(() => ({ pin: '1234', isDefault: true }))
+        scanSecurityService.getCurrentPIN().catch(() => ({ pin: '1234', isDefault: true })),
+        apiClient.get<string[]>('/api/admin/employes/departements').catch(() => []),
+        apiClient.get<string[]>('/api/admin/employes/postes').catch(() => [])
       ])
 
       if (!profileResponse?.success || !profileResponse.user) {
@@ -113,6 +125,10 @@ const AdminSettingsPage: React.FC = () => {
 
       setSettingsForm(settingsResponse)
       setCurrentPinInfo(pinResponse)
+      
+      // Charger les départements et postes
+      setDepartements(Array.isArray(departementsResponse) ? departementsResponse.filter(Boolean) : [])
+      setPostes(Array.isArray(postesResponse) ? postesResponse.filter(Boolean) : [])
     } catch (loadError: unknown) {
       console.error('Erreur chargement parametres admin:', loadError)
       if (isUnauthorizedError(loadError)) {
@@ -190,6 +206,90 @@ const AdminSettingsPage: React.FC = () => {
       setError('Erreur lors de la sauvegarde des parametres.')
     } finally {
       setSavingSettings(false)
+    }
+  }
+
+  const handleAddDepartement = async () => {
+    if (!newDepartement.trim()) return
+
+    try {
+      setLoadingDepartements(true)
+      setError(null)
+
+      const updatedDepartements = [...departements, newDepartement.trim()]
+      await apiClient.post('/api/admin/settings/departements', { departements: updatedDepartements })
+      
+      setDepartements(updatedDepartements)
+      setNewDepartement('')
+      setShowAddDepartement(false)
+      setSuccess('Département ajouté avec succès.')
+    } catch (error) {
+      console.error('Erreur ajout département:', error)
+      setError('Impossible d\'ajouter le département.')
+    } finally {
+      setLoadingDepartements(false)
+    }
+  }
+
+  const handleAddPoste = async () => {
+    if (!newPoste.trim()) return
+
+    try {
+      setLoadingPostes(true)
+      setError(null)
+
+      const updatedPostes = [...postes, newPoste.trim()]
+      await apiClient.post('/api/admin/settings/postes', { postes: updatedPostes })
+      
+      setPostes(updatedPostes)
+      setNewPoste('')
+      setShowAddPoste(false)
+      setSuccess('Poste ajouté avec succès.')
+    } catch (error) {
+      console.error('Erreur ajout poste:', error)
+      setError('Impossible d\'ajouter le poste.')
+    } finally {
+      setLoadingPostes(false)
+    }
+  }
+
+  const handleDeleteDepartement = async (departement: string) => {
+    if (!confirm(`Supprimer le département "${departement}" ?`)) return
+
+    try {
+      setLoadingDepartements(true)
+      setError(null)
+
+      const updatedDepartements = departements.filter(d => d !== departement)
+      await apiClient.post('/api/admin/settings/departements', { departements: updatedDepartements })
+      
+      setDepartements(updatedDepartements)
+      setSuccess('Département supprimé avec succès.')
+    } catch (error) {
+      console.error('Erreur suppression département:', error)
+      setError('Impossible de supprimer le département.')
+    } finally {
+      setLoadingDepartements(false)
+    }
+  }
+
+  const handleDeletePoste = async (poste: string) => {
+    if (!confirm(`Supprimer le poste "${poste}" ?`)) return
+
+    try {
+      setLoadingPostes(true)
+      setError(null)
+
+      const updatedPostes = postes.filter(p => p !== poste)
+      await apiClient.post('/api/admin/settings/postes', { postes: updatedPostes })
+      
+      setPostes(updatedPostes)
+      setSuccess('Poste supprimé avec succès.')
+    } catch (error) {
+      console.error('Erreur suppression poste:', error)
+      setError('Impossible de supprimer le poste.')
+    } finally {
+      setLoadingPostes(false)
     }
   }
 
@@ -816,6 +916,249 @@ const AdminSettingsPage: React.FC = () => {
               <li>Peut être personnalisé par chaque admin</li>
               <li>Le super_admin peut accéder sans code PIN</li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Section Gestion des départements et postes */}
+      <section className="php-card bg-gradient-to-br from-white to-gray-50 border-0 shadow-xl">
+        <div className="php-card-header border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="php-card-title text-gray-900 font-semibold">Gestion des départements et postes</h2>
+              <p className="text-sm text-gray-600 mt-0.5">Configurez les départements et postes disponibles</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Section Départements */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-md bg-green-100 flex items-center justify-center">
+                <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Départements</h3>
+                <p className="text-sm text-gray-500">{departements.length} département{departements.length > 1 ? 's' : ''} configuré{departements.length > 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddDepartement(!showAddDepartement)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+              disabled={loadingDepartements}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter un département
+            </button>
+          </div>
+
+          {showAddDepartement && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={newDepartement}
+                    onChange={(e) => setNewDepartement(e.target.value)}
+                    placeholder="Nom du département..."
+                    className="w-full px-4 py-3 pl-10 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddDepartement()}
+                  />
+                  <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddDepartement}
+                    className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                    disabled={loadingDepartements || !newDepartement.trim()}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Ajouter
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddDepartement(false)
+                      setNewDepartement('')
+                    }}
+                    className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {departements.length === 0 ? (
+              <div className="col-span-full text-center py-12 px-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-700 mb-2">Aucun département configuré</h4>
+                <p className="text-sm text-gray-500">Cliquez sur "Ajouter un département" pour commencer à configurer vos départements.</p>
+              </div>
+            ) : (
+              departements.map((departement) => (
+                <div key={departement} className="group relative bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-gray-900 truncate">{departement}</h4>
+                        <p className="text-xs text-gray-500 mt-0.5">Département</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteDepartement(departement)}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      disabled={loadingDepartements}
+                      title="Supprimer le département"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Section Postes */}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-md bg-purple-100 flex items-center justify-center">
+                <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Postes</h3>
+                <p className="text-sm text-gray-500">{postes.length} poste{postes.length > 1 ? 's' : ''} configuré{postes.length > 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddPoste(!showAddPoste)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+              disabled={loadingPostes}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter un poste
+            </button>
+          </div>
+
+          {showAddPoste && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl shadow-sm">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={newPoste}
+                    onChange={(e) => setNewPoste(e.target.value)}
+                    placeholder="Nom du poste..."
+                    className="w-full px-4 py-3 pl-10 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white transition-all duration-200"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddPoste()}
+                  />
+                  <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddPoste}
+                    className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                    disabled={loadingPostes || !newPoste.trim()}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Ajouter
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddPoste(false)
+                      setNewPoste('')
+                    }}
+                    className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {postes.length === 0 ? (
+              <div className="col-span-full text-center py-12 px-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-200 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-700 mb-2">Aucun poste configuré</h4>
+                <p className="text-sm text-gray-500">Cliquez sur "Ajouter un poste" pour commencer à configurer vos postes.</p>
+              </div>
+            ) : (
+              postes.map((poste) => (
+                <div key={poste} className="group relative bg-white border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all duration-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-gray-900 truncate">{poste}</h4>
+                        <p className="text-xs text-gray-500 mt-0.5">Poste</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeletePoste(poste)}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      disabled={loadingPostes}
+                      title="Supprimer le poste"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

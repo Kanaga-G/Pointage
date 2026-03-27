@@ -8,7 +8,10 @@ export interface User {
   nom: string
   prenom: string
   email: string
-  role: 'admin' | 'super_admin' | 'manager' | 'chef_departement' | 'comptable' | 'stagiaire' | 'hr' | 'employe'
+  // Role d'acces (backend enum Role): uniquement ces 3 valeurs.
+  role: 'admin' | 'super_admin' | 'employe'
+  // Poste / role metier (optionnel): manager/hr/... (ne fait pas partie de l'enum Prisma Role).
+  role_metier?: 'manager' | 'chef_departement' | 'comptable' | 'stagiaire' | 'hr' | null
   departement?: string
   telephone?: string
   adresse?: string
@@ -58,7 +61,7 @@ class AuthService {
 
   private async initializeAuth() {
     try {
-      // VÃ©rifier le token dans localStorage
+      // Vérifier le token dans localStorage
       const token = localStorage.getItem('auth_token')
       if (token) {
         // Valider le token avec le backend
@@ -111,12 +114,12 @@ class AuthService {
     this.listeners.forEach(listener => listener(this.authState))
   }
 
-  // MÃ©thodes publiques
+  // méthodes publiques
   subscribe(listener: (state: AuthState) => void) {
     this.listeners.push(listener)
     listener(this.authState)
     
-    // Retourner fonction de dÃ©sabonnement
+    // Retourner fonction de désabonnement
     return () => {
       const index = this.listeners.indexOf(listener)
       if (index > -1) {
@@ -139,7 +142,7 @@ class AuthService {
         // Sauvegarder le token
         localStorage.setItem('auth_token', data.token)
         
-        // Mettre Ã  jour l'Ã©tat
+        // Mettre Ã  jour l'état
         this.setUser(data.user)
         
         return { success: true, user: data.user }
@@ -197,44 +200,46 @@ class AuthService {
     // Supprimer le token
     localStorage.removeItem('auth_token')
     
-    // RÃ©initialiser l'Ã©tat
+    // Réinitialiser l'état
     this.setUser(null)
   }
 
-  // VÃ©rifier si l'utilisateur est admin
+  // Vérifier si l'utilisateur est admin
   isAdmin(): boolean {
     return this.authState.user?.role === 'admin' || this.authState.user?.role === 'super_admin'
   }
 
-  // VÃ©rifier si l'utilisateur est super admin
+  // Vérifier si l'utilisateur est super admin
   isSuperAdmin(): boolean {
     return this.authState.user?.role === 'super_admin'
   }
 
-  // VÃ©rifier si l'utilisateur est manager
+  // Vérifier si l'utilisateur est manager
   isManager(): boolean {
-    return this.authState.user?.role === 'manager'
+    return this.authState.user?.role_metier === 'manager'
   }
 
-  // VÃ©rifier si l'utilisateur est HR
+  // Vérifier si l'utilisateur est HR
   isHR(): boolean {
-    return this.authState.user?.role === 'hr'
+    return this.authState.user?.role_metier === 'hr'
   }
 
-  // VÃ©rifier si l'utilisateur est employÃ© (uniquement le rÃ´le employÃ©)
+  // Vérifier si l'utilisateur est employé (uniquement le rÃ´le employé)
   isEmploye(): boolean {
     return this.authState.user?.role === 'employe'
   }
 
-  // VÃ©rifier si l'utilisateur est un admin (tous les rÃ´les sauf employÃ©)
+  // Vérifier si l'utilisateur est un admin (tous les rÃ´les sauf employé)
   isAnyAdmin(): boolean {
-    return this.authState.user?.role === 'admin' || 
-           this.authState.user?.role === 'super_admin' || 
-           this.authState.user?.role === 'manager' || 
-           this.authState.user?.role === 'hr'
+    const role = this.authState.user?.role
+    const metier = this.authState.user?.role_metier
+    return role === 'admin' ||
+           role === 'super_admin' ||
+           metier === 'manager' ||
+           metier === 'hr'
   }
 
-  // VÃ©rifier si l'utilisateur a accÃ¨s aux paramÃ¨tres
+  // Vérifier si l'utilisateur a accÃ¨s aux paramÃ¨tres
   hasSettingsAccess(): boolean {
     return this.authState.user?.role === 'admin' || 
            this.authState.user?.role === 'super_admin'
@@ -249,7 +254,7 @@ class AuthService {
   async updateProfile(updates: Partial<User>): Promise<{ success: boolean; error?: string }> {
     try {
       if (!localStorage.getItem('auth_token')) {
-        return { success: false, error: 'Non authentifiÃ©' }
+        return { success: false, error: 'Non authentifié' }
       }
 
       const data = await apiClient.put<Partial<User>, { success: boolean; user?: User; message?: string }>(
@@ -258,7 +263,7 @@ class AuthService {
       )
 
       if (data.success && data.user) {
-        // Mettre Ã  jour l'utilisateur dans l'Ã©tat
+        // Mettre Ã  jour l'utilisateur dans l'état
         this.setUser(data.user)
         return { success: true }
       } else {

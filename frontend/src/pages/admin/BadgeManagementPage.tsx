@@ -37,7 +37,6 @@ const ROLE_LABELS: Record<string, string> = {
   manager: 'Manager',
   hr: 'RH',
   chef_departement: 'Chef departement',
-  comptable: 'Comptable',
   stagiaire: 'Stagiaire',
   employe: 'Employe'
 }
@@ -62,11 +61,6 @@ const ROLE_BADGE_PRIVILEGES: Record<string, string[]> = {
     'Acces pilotage departement',
     'Suivi des presences du departement',
     'Validation de premier niveau'
-  ],
-  comptable: [
-    'Acces donnees presence pour paie',
-    'Consultation historique pointage',
-    'Aucun acces administration systeme'
   ],
   stagiaire: [
     'Pointage personnel arrivee/depart',

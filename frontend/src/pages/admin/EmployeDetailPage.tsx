@@ -113,7 +113,6 @@ const ROLE_LABELS: Record<string, string> = {
   manager: 'Manager',
   hr: 'RH',
   chef_departement: 'Chef departement',
-  comptable: 'Comptable',
   stagiaire: 'Stagiaire',
   employe: 'Employe'
 }
@@ -211,6 +210,14 @@ const EmployeDetailPage: React.FC = () => {
   const [employe, setEmploye] = useState<EmployeDetail | null>(null)
   const [formData, setFormData] = useState<EmployeFormData>(EMPTY_FORM)
   const [roles, setRoles] = useState<RoleDefinition[]>([])
+  const [departements, setDepartements] = useState<string[]>([])
+  const [postes, setPostes] = useState<string[]>([])
+  const [newDepartement, setNewDepartement] = useState('')
+  const [newPoste, setNewPoste] = useState('')
+  const [showAddDepartement, setShowAddDepartement] = useState(false)
+  const [showAddPoste, setShowAddPoste] = useState(false)
+  const [loadingDepartements, setLoadingDepartements] = useState(false)
+  const [loadingPostes, setLoadingPostes] = useState(false)
   const [isEditing, setIsEditing] = useState(() => location.pathname.endsWith('/edit'))
   const [badge, setBadge] = useState<BadgePreview | null>(null)
   const [loadingBadge, setLoadingBadge] = useState(false)
@@ -249,7 +256,7 @@ const EmployeDetailPage: React.FC = () => {
       return
     }
 
-    void Promise.all([loadRoles(), loadEmployeDetail(Number(id)), loadEmployeBadge(Number(id))])
+    void Promise.all([loadRoles(), loadEmployeDetail(Number(id)), loadEmployeBadge(Number(id)), loadDepartements(), loadPostes()])
   }, [authLoading, id, navigate, user])
 
   useEffect(() => {
@@ -269,6 +276,40 @@ const EmployeDetailPage: React.FC = () => {
     } catch (loadError) {
       console.error('Erreur chargement roles employe:', loadError)
       setRoles([])
+    }
+  }
+
+  const loadDepartements = async () => {
+    try {
+      setLoadingDepartements(true)
+      const response = await apiClient.get<string[]>('/api/admin/employes/departements')
+      if (Array.isArray(response)) {
+        setDepartements(response.filter(Boolean))
+      } else {
+        setDepartements([])
+      }
+    } catch (loadError) {
+      console.error('Erreur chargement départements:', loadError)
+      setDepartements([])
+    } finally {
+      setLoadingDepartements(false)
+    }
+  }
+
+  const loadPostes = async () => {
+    try {
+      setLoadingPostes(true)
+      const response = await apiClient.get<string[]>('/api/admin/employes/postes')
+      if (Array.isArray(response)) {
+        setPostes(response.filter(Boolean))
+      } else {
+        setPostes([])
+      }
+    } catch (loadError) {
+      console.error('Erreur chargement postes:', loadError)
+      setPostes([])
+    } finally {
+      setLoadingPostes(false)
     }
   }
 
@@ -363,6 +404,36 @@ const EmployeDetailPage: React.FC = () => {
   const handleOpenContractPicker = () => {
     if (!isEditing || !canEditProfessional || uploadingContract) return
     contractFileInputRef.current?.click()
+  }
+
+  const handleAddDepartement = async () => {
+    if (!newDepartement.trim()) return
+    
+    try {
+      if (!departements.includes(newDepartement.trim())) {
+        setDepartements(prev => [...prev, newDepartement.trim()])
+        setFormData(prev => ({ ...prev, departement: newDepartement.trim() }))
+      }
+      setNewDepartement('')
+      setShowAddDepartement(false)
+    } catch (error) {
+      console.error('Erreur ajout département:', error)
+    }
+  }
+
+  const handleAddPoste = async () => {
+    if (!newPoste.trim()) return
+    
+    try {
+      if (!postes.includes(newPoste.trim())) {
+        setPostes(prev => [...prev, newPoste.trim()])
+        setFormData(prev => ({ ...prev, poste: newPoste.trim() }))
+      }
+      setNewPoste('')
+      setShowAddPoste(false)
+    } catch (error) {
+      console.error('Erreur ajout poste:', error)
+    }
   }
 
   const handleSave = async () => {
@@ -915,24 +986,118 @@ const EmployeDetailPage: React.FC = () => {
 
             <div>
               <label className="xp-form-label">Departement</label>
-              <input
-                type="text"
-                name="departement"
-                value={formData.departement}
-                onChange={handleInputChange}
-                className="xp-form-input"
-              />
+              <div className="flex gap-2">
+                <select
+                  name="departement"
+                  value={formData.departement}
+                  onChange={handleInputChange}
+                  className="xp-form-input flex-1"
+                  disabled={!isEditing || loadingDepartements}
+                >
+                  <option value="">Sélectionner un département...</option>
+                  {departements.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowAddDepartement(!showAddDepartement)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  disabled={!isEditing}
+                  title="Ajouter un département"
+                >
+                  +
+                </button>
+              </div>
+              {showAddDepartement && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={newDepartement}
+                    onChange={(e) => setNewDepartement(e.target.value)}
+                    placeholder="Nouveau département..."
+                    className="xp-form-input flex-1"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddDepartement()}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddDepartement}
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddDepartement(false)
+                      setNewDepartement('')
+                    }}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="xp-form-label">Poste</label>
-              <input
-                type="text"
-                name="poste"
-                value={formData.poste}
-                onChange={handleInputChange}
-                className="xp-form-input"
-              />
+              <div className="flex gap-2">
+                <select
+                  name="poste"
+                  value={formData.poste}
+                  onChange={handleInputChange}
+                  className="xp-form-input flex-1"
+                  disabled={!isEditing || loadingPostes}
+                >
+                  <option value="">Sélectionner un poste...</option>
+                  {postes.map((poste) => (
+                    <option key={poste} value={poste}>
+                      {poste}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowAddPoste(!showAddPoste)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  disabled={!isEditing}
+                  title="Ajouter un poste"
+                >
+                  +
+                </button>
+              </div>
+              {showAddPoste && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={newPoste}
+                    onChange={(e) => setNewPoste(e.target.value)}
+                    placeholder="Nouveau poste..."
+                    className="xp-form-input flex-1"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddPoste()}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPoste}
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddPoste(false)
+                      setNewPoste('')
+                    }}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
             </div>
           </fieldset>
         </section>

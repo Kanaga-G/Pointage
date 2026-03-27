@@ -15,6 +15,13 @@ export interface Permission {
   description: string;
 }
 
+// Rôles d'accès (DB) vs rôles métier (poste).
+export type AccessRole = 'super_admin' | 'admin' | 'employe';
+export type MetierRole = 'manager' | 'hr' | 'chef_departement' | 'comptable' | 'stagiaire';
+export type EffectiveRole = AccessRole | MetierRole;
+
+type UserLike = Pick<User, 'role'> & Partial<Pick<User, 'role_metier' | 'poste'>>;
+
 export const ROLES: Role[] = [
   {
     id: 'super_admin',
@@ -169,6 +176,42 @@ export const PERMISSIONS: Permission[] = [
 ];
 
 export class RoleService {
+  static normalizeRoleId(value: unknown): string {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (!raw) return 'employe';
+    if (raw === 'chef de departement' || raw === 'chef-departement' || raw === 'chefdepartement') return 'chef_departement';
+    if (raw === 'rh' || raw === 'ressources humaines') return 'hr';
+    return raw;
+  }
+
+  static resolveRoleFromPoste(poste: unknown): MetierRole | null {
+    const normalized = this.normalizeRoleId(poste);
+    if (normalized === 'manager') return 'manager';
+    if (normalized === 'hr') return 'hr';
+    if (normalized === 'chef_departement') return 'chef_departement';
+    if (normalized === 'comptable') return 'comptable';
+    if (normalized === 'stagiaire') return 'stagiaire';
+    return null;
+  }
+
+  // Rôle utilisé pour permissions/UI: role_metier (si présent) sinon poste (si mappable) sinon role d'accès.
+  static resolveEffectiveRole(userOrRole: UserLike | string | null | undefined): EffectiveRole {
+    if (!userOrRole) return 'employe';
+    if (typeof userOrRole === 'string') {
+      return this.normalizeRoleId(userOrRole) as EffectiveRole;
+    }
+
+    const metier = this.normalizeRoleId((userOrRole as any).role_metier);
+    if (metier && ROLES.some((r) => r.id === metier)) {
+      return metier as EffectiveRole;
+    }
+
+    const fromPoste = this.resolveRoleFromPoste((userOrRole as any).poste);
+    if (fromPoste) return fromPoste;
+
+    return this.normalizeRoleId(userOrRole.role) as EffectiveRole;
+  }
+
   static hasPermission(userRole: string, permission: string): boolean {
     const role = ROLES.find(r => r.id === userRole);
     if (!role) return false;
@@ -179,14 +222,29 @@ export class RoleService {
     return role.permissions.includes(permission);
   }
 
+  static hasPermissionForUser(user: UserLike | null | undefined, permission: string): boolean {
+    if (!user) return false;
+    return this.hasPermission(this.resolveEffectiveRole(user), permission);
+  }
+
   static getRolePermissions(userRole: string): string[] {
     const role = ROLES.find(r => r.id === userRole);
     return role ? role.permissions : [];
   }
 
+  static getRolePermissionsForUser(user: UserLike | null | undefined): string[] {
+    if (!user) return [];
+    return this.getRolePermissions(this.resolveEffectiveRole(user));
+  }
+
   static canAccessResource(userRole: string, resource: string, action: string = 'view'): boolean {
     const permission = `${resource}.${action}`;
     return this.hasPermission(userRole, permission);
+  }
+
+  static canAccessResourceForUser(user: UserLike | null | undefined, resource: string, action: string = 'view'): boolean {
+    if (!user) return false;
+    return this.canAccessResource(this.resolveEffectiveRole(user), resource, action);
   }
 
   static getAvailablePanels(userRole: string): any[] {
@@ -266,6 +324,17 @@ export class RoleService {
     return allPanels.filter(panel => 
       this.hasPermission(userRole, panel.permission)
     );
+  }
+
+  static getAvailablePanelsForUser(user: UserLike | null | undefined): any[] {
+    if (!user) return [];
+    return this.getAvailablePanels(this.resolveEffectiveRole(user));
+  }
+
+  static getRoleLabel(userOrRole: UserLike | string | null | undefined): string {
+    const effective = this.resolveEffectiveRole(userOrRole as any);
+    const role = ROLES.find((r) => r.id === effective);
+    return role?.name || String(effective);
   }
 
   static async assignRoleToUser(userId: number, roleId: string): Promise<boolean> {
