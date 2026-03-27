@@ -1,0 +1,537 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id              Int            @id @default(autoincrement())
+  nom             String         @db.VarChar(50)
+  prenom          String         @db.VarChar(50)
+  adresse         String?        @default("Adresse non renseignée") @db.VarChar(25)
+  email           String         @unique @db.VarChar(100)
+  telephone       String?        @db.VarChar(20)
+  password        String         @db.VarChar(255)
+  role            Role           @default(admin)
+  lastActivity    DateTime?      @map("last_activity")
+  dateCreation    DateTime?      @default(now()) @map("date_creation")
+  poste           String?        @db.VarChar(20)
+  departement     String?        @db.VarChar(20)
+  createdBy       Int?           @map("created_by")
+  statut          Statut         @default(actif)
+  badgeId         String?        @map("badge_id") @db.VarChar(50)
+  badgeToken      String?        @map("badge_token") @db.VarChar(64)
+  badgeActif      Boolean        @default(false) @map("badge_actif")
+  badgeCreated    DateTime?      @map("badge_created")
+  badgeExpires    DateTime?      @map("badge_expires")
+  badgeClass      String         @default("admin") @map("badge_class") @db.VarChar(20)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  adminLogs       AdminLog[]
+  creator         Admin?         @relation("AdminCreatedBy", fields: [createdBy], references: [id])
+  createdAdmins   Admin[]        @relation("AdminCreatedBy")
+  badgeTokens     BadgeToken[]
+  demandesBadge   DemandeBadge[]
+  createdEmployes Employe[]      @relation("EmployeCreatedBy")
+  messages        Message[]
+  pauses          Pause[]
+  pointages       Pointage[]     @relation("AdminPointages")
+  retards         Retard[]       @relation("AdminRetards")
+  scanDevices     ScanDevice[]
+  scanSessions    ScanSession[]
+
+  @@map("admins")
+}
+
+model Employe {
+  id                    Int                    @id @default(autoincrement())
+  nom                   String                 @db.VarChar(20)
+  prenom                String                 @db.VarChar(20)
+  email                 String                 @unique @db.VarChar(100)
+  emailPro              String?                @map("email_pro") @db.VarChar(100)
+  password              String                 @db.VarChar(255)
+  role                  Role                   @default(employe)
+  statut                Statut                 @default(actif)
+  dateEmbauche          DateTime?              @map("date_embauche") @db.Date
+  anciennete            String?                @db.VarChar(20)
+  poste                 String?                @db.VarChar(50)
+  salaire               Decimal?               @db.Decimal(10, 2)
+  telephone             String?                @db.VarChar(20)
+  photo                 String?                @db.VarChar(255)
+  infosSup              String?                @map("infos_sup")
+  dateCreation          DateTime               @default(now()) @map("date_creation")
+  badgeId               String?                @unique @map("badge_id") @db.VarChar(50)
+  badgeActif            Boolean                @default(true) @map("badge_actif")
+  qrCode                String?                @unique @map("qr_code") @db.VarChar(50)
+  qrCodeData            String?                @map("qr_code_data")
+  contratType           String?                @map("contrat_type") @db.VarChar(50)
+  contratDuree          String?                @map("contrat_duree") @db.VarChar(50)
+  badgeToken            String?                @map("badge_token") @db.VarChar(64)
+  matricule             String?                @unique @db.VarChar(20)
+  rapportQuotidiens     Boolean                @default(false) @map("rapport_quotidiens")
+  adresse               String?                @db.VarChar(255)
+  departement           String?                @db.VarChar(100)
+  createdBy             Int?                   @map("created_by")
+  absences              Absence[]
+  badgeJournalier       Badge[]
+  badgeLogs             BadgeLog[]
+  badgeTokens           BadgeToken[]
+  conges                Conge[]
+  demandes              Demande[]
+  demandesBadge         DemandeBadge[]
+  creator               Admin?                 @relation("EmployeCreatedBy", fields: [createdBy], references: [id])
+  evenements            Evenement[]
+  justificatifs         Justificatif[]         @relation("EmployeJustificatifs")
+  messageDestinataires  MessageDestinataire[]
+  notifications         Notification[]
+  parametresUtilisateur ParametreUtilisateur[]
+  passwordResets        PasswordReset[]
+  pauses                Pause[]
+  pointages             Pointage[]
+  retards               Retard[]
+
+  @@map("employes")
+}
+
+model Pointage {
+  id              Int            @id @default(autoincrement())
+  datePointage    DateTime?      @map("date_pointage")
+  dateHeure       DateTime       @default(now()) @map("date_heure")
+  employeId       Int?           @map("employe_id")
+  isRead          Boolean        @default(false) @map("is_read")
+  tempsTotal      DateTime?      @map("temps_total") @db.Time(6)
+  type            PointageType
+  estJustifie     Boolean        @default(false) @map("est_justifie")
+  commentaire     String?
+  badgeTokenId    Int?           @map("badge_token_id")
+  ipAddress       String?        @map("ip_address") @db.VarChar(45)
+  deviceInfo      String?        @map("device_info")
+  latitude        Decimal?       @db.Decimal(10, 8)
+  longitude       Decimal?       @db.Decimal(11, 8)
+  qrCodeId        Int?           @map("qr_code_id")
+  etat            String?        @default("normal") @db.VarChar(20)
+  justificationId Int?           @map("justification_id")
+  statut          String?        @default("présent") @db.VarChar(50)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  retardMinutes   Int            @default(0) @map("retard_minutes")
+  adminId         Int?           @map("admin_id")
+  pauseDebut      DateTime?      @map("pause_debut")
+  pauseFin        DateTime?      @map("pause_fin")
+  justification   Justificatif?  @relation("PointageJustification")
+  notifications   Notification[]
+  pauses          Pause[]
+  admin           Admin?         @relation("AdminPointages", fields: [adminId], references: [id])
+  badgeToken      BadgeToken?    @relation(fields: [badgeTokenId], references: [id])
+  employe         Employe?       @relation(fields: [employeId], references: [id])
+  qrCode          QrCode?        @relation(fields: [qrCodeId], references: [id])
+  retards         Retard?
+
+  @@map("pointages")
+}
+
+model Demande {
+  id             Int           @id @default(autoincrement())
+  employeId      Int           @map("employe_id")
+  type           DemandeType
+  raison         String?
+  statut         DemandeStatut @default(en_attente)
+  dateDemande    DateTime      @default(now()) @map("date_demande")
+  dateTraitement DateTime?     @map("date_traitement")
+  commentaire    String?
+  traitePar      Int?          @map("traite_par")
+  employe        Employe       @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@map("demandes")
+}
+
+model Notification {
+  id           Int       @id @default(autoincrement())
+  employeId    Int       @map("employe_id")
+  titre        String    @db.VarChar(255)
+  contenu      String?
+  message      String?
+  type         String?   @db.VarChar(50)
+  lien         String?   @db.VarChar(255)
+  lue          Boolean   @default(false)
+  dateCreation DateTime  @default(now()) @map("date_creation")
+  date         DateTime  @default(now())
+  pointageId   Int?      @map("pointage_id")
+  dateLecture  DateTime? @map("date_lecture")
+  employe      Employe   @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  pointage     Pointage? @relation(fields: [pointageId], references: [id])
+
+  @@map("notifications")
+}
+
+model Badge {
+  id             Int      @id @default(autoincrement())
+  employeId      Int      @map("employe_id")
+  code           String   @db.VarChar(64)
+  dateValidite   DateTime @map("date_validite") @db.Date
+  utiliseArrivee Boolean  @default(false) @map("utilise_arrivee")
+  utiliseDepart  Boolean  @default(false) @map("utilise_depart")
+  employe        Employe  @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeId, dateValidite])
+  @@map("badge_journalier")
+}
+
+model Evenement {
+  id          Int           @id @default(autoincrement())
+  titre       String        @db.VarChar(255)
+  description String?
+  startDate   DateTime      @map("start_date")
+  endDate     DateTime      @map("end_date")
+  type        EvenementType @default(autre)
+  employeId   Int?          @map("employe_id")
+  employe     Employe?      @relation(fields: [employeId], references: [id])
+
+  @@map("evenements")
+}
+
+model LateReason {
+  id        Int      @id @default(autoincrement())
+  employeId String   @map("employe_id") @db.VarChar(20)
+  scanTime  DateTime @map("scan_time")
+  lateTime  Int      @map("late_time")
+  reason    String   @db.VarChar(255)
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("late_reasons")
+}
+
+model Absence {
+  id          Int       @id @default(autoincrement())
+  employeId   Int?      @map("employe_id")
+  dateAbsence DateTime? @map("date_absence") @db.Date
+  motif       String?
+  statut      String    @default("non autorisé") @map("statut") @db.VarChar(20)
+  employe     Employe?  @relation(fields: [employeId], references: [id])
+
+  @@map("absences")
+}
+
+model AdminLog {
+  id        Int      @id @default(autoincrement())
+  adminId   Int      @map("admin_id")
+  action    String   @db.VarChar(50)
+  details   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("admin_logs")
+}
+
+model BadgeLog {
+  id        Int      @id @default(autoincrement())
+  employeId Int      @map("employe_id")
+  action    String   @db.VarChar(50)
+  details   String?
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  createdAt DateTime @default(now()) @map("created_at")
+  employe   Employe  @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@map("badge_logs")
+}
+
+model BadgeScan {
+  id                Int         @id @default(autoincrement())
+  tokenId           Int?        @map("token_id")
+  tokenHash         String      @map("token_hash") @db.VarChar(128)
+  scanTime          DateTime    @default(now()) @map("scan_time")
+  ipAddress         String      @map("ip_address") @db.VarChar(45)
+  deviceInfo        String?     @map("device_info")
+  isValid           Boolean     @map("is_valid")
+  validationDetails Json?       @map("validation_details")
+  latitude          Decimal?    @db.Decimal(10, 8)
+  longitude         Decimal?    @db.Decimal(11, 8)
+  scanType          ScanType    @map("scan_type")
+  token             BadgeToken? @relation(fields: [tokenId], references: [id])
+
+  @@map("badge_scans")
+}
+
+model BadgeToken {
+  id         Int         @id @default(autoincrement())
+  employeId  Int?        @map("employe_id")
+  token      String?     @db.VarChar(255)
+  tokenHash  String      @map("token_hash") @db.VarChar(128)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  expiresAt  DateTime    @map("expires_at")
+  ipAddress  String      @map("ip_address") @db.VarChar(45)
+  userAgent  String?     @map("user_agent") @db.VarChar(255)
+  deviceInfo String?     @map("device_info")
+  status     BadgeStatus @default(active)
+  type       String?     @db.VarChar(50)
+  revokedAt  DateTime?   @map("revoked_at")
+  createdBy  String?     @default("system") @map("created_by") @db.VarChar(50)
+  lastUsedAt DateTime?   @map("last_used_at")
+  usageCount Int         @default(0) @map("usage_count")
+  adminId    Int?        @map("admin_id")
+  badgeScans BadgeScan[]
+  admin      Admin?      @relation(fields: [adminId], references: [id])
+  employe    Employe?    @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  pointages  Pointage[]
+
+  @@map("badge_tokens")
+}
+
+model Conge {
+  id            Int     @id @default(autoincrement())
+  employeId     Int     @map("employe_id")
+  joursTotal    Int     @default(25) @map("jours_total")
+  joursUtilises Int     @default(0) @map("jours_utilises")
+  joursRestants Int     @default(25) @map("jours_restants")
+  annee         Int     @map("annee")
+  employe       Employe @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeId, annee])
+  @@map("conges")
+}
+
+model DemandeBadge {
+  id             Int           @id @default(autoincrement())
+  employeId      Int           @map("employe_id")
+  raison         String
+  dateDemande    DateTime      @default(now()) @map("date_demande")
+  statut         DemandeStatut @default(en_attente)
+  dateTraitement DateTime?     @map("date_traitement")
+  adminId        Int?          @map("admin_id")
+  raisonRejet    String?       @map("raison_rejet")
+  isRead         Boolean       @default(false) @map("is_read")
+  traitePar      Int?          @map("traite_par")
+  admin          Admin?        @relation(fields: [adminId], references: [id])
+  employe        Employe       @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@map("demandes_badge")
+}
+
+model Justificatif {
+  id          Int               @id @default(autoincrement())
+  pointageId  Int?              @unique @map("id_pointage")
+  employeId   Int               @map("employe_id")
+  typeJustif  JustificatifType? @map("type_justif")
+  description String?
+  fichier     String?           @db.VarChar(255)
+  dateAjout   DateTime          @default(now()) @map("date_ajout")
+  etat        JustificatifEtat  @default(en_attente)
+  employe     Employe           @relation("EmployeJustificatifs", fields: [employeId], references: [id])
+  pointage    Pointage?         @relation("PointageJustification", fields: [pointageId], references: [id])
+
+  @@map("justificatifs")
+}
+
+model Message {
+  id            Int                   @id @default(autoincrement())
+  expediteurId  Int                   @map("expediteur_id")
+  sujet         String                @db.VarChar(100)
+  contenu       String
+  dateEnvoi     DateTime              @default(now()) @map("date_envoi")
+  destinataires MessageDestinataire[]
+  expediteur    Admin                 @relation(fields: [expediteurId], references: [id])
+
+  @@map("messages")
+}
+
+model MessageDestinataire {
+  messageId      Int       @map("message_id")
+  destinataireId Int       @map("destinataire_id")
+  lu             Boolean   @default(false)
+  dateLecture    DateTime? @map("date_lecture")
+  destinataire   Employe   @relation(fields: [destinataireId], references: [id], onDelete: Cascade)
+  message        Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, destinataireId])
+  @@map("message_destinataires")
+}
+
+model ParametreUtilisateur {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  userType  String   @default("admin") @map("user_type") @db.VarChar(32)
+  cle       String   @db.VarChar(255)
+  valeur    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  employeId Int?     @map("employe_id")
+  employe   Employe? @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cle])
+  @@map("parametres_utilisateur")
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(255)
+  token     String   @db.VarChar(255)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  employeId Int?     @map("employe_id")
+  employe   Employe? @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+model Pause {
+  id                  Int       @id @default(autoincrement())
+  employeId           Int       @map("employe_id")
+  adminId             Int?      @map("admin_id")
+  pointageId          Int?      @map("pointage_id")
+  typePause           PauseType @map("type_pause")
+  dateDebut           DateTime  @map("date_debut")
+  dateFin             DateTime? @map("date_fin")
+  justification       String?
+  fichierJustificatif String?   @map("fichier_justificatif") @db.VarChar(255)
+  dureeMinutes        Int?      @map("duree_minutes")
+  admin               Admin?    @relation(fields: [adminId], references: [id])
+  employe             Employe   @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  pointage            Pointage? @relation(fields: [pointageId], references: [id])
+
+  @@map("pauses")
+}
+
+model QrCode {
+  id           Int        @id @default(autoincrement())
+  nom          String     @db.VarChar(255)
+  departement  String     @db.VarChar(255)
+  heureArrivee DateTime   @map("heure_arrivee")
+  type         String     @db.VarChar(20)
+  pointages    Pointage[]
+
+  @@map("qr_codes")
+}
+
+model Retard {
+  id                  Int          @id @default(autoincrement())
+  pointageId          Int          @unique @map("pointage_id")
+  employeId           Int          @map("employe_id")
+  raison              String       @db.VarChar(100)
+  details             String?
+  fichierJustificatif String?      @map("fichier_justificatif") @db.VarChar(255)
+  statut              RetardStatut @default(en_attente)
+  dateSoumission      DateTime     @default(now()) @map("date_soumission")
+  dateTraitement      DateTime?    @map("date_traitement")
+  adminTraitantId     Int?         @map("admin_traitant_id")
+  adminTraitant       Admin?       @relation("AdminRetards", fields: [adminTraitantId], references: [id])
+  employe             Employe      @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  pointage            Pointage     @relation(fields: [pointageId], references: [id], onDelete: Cascade)
+
+  @@map("retards")
+}
+
+enum Role {
+  employe
+  admin
+  super_admin
+}
+
+enum Statut {
+  actif
+  inactif
+}
+
+enum PointageType {
+  arrivee
+  depart
+  absence
+  pause_debut
+  pause_fin
+}
+
+enum DemandeType {
+  conge
+  retard
+  absence
+  badge
+}
+
+enum DemandeStatut {
+  en_attente
+  approuve
+  rejete
+}
+
+enum EvenementType {
+  reunion
+  formation
+  autre
+}
+
+enum JustificatifType {
+  retard
+  absence
+}
+
+enum JustificatifEtat {
+  en_attente
+  approuve
+  rejete
+}
+
+enum BadgeStatus {
+  active
+  revoked
+  expired
+}
+
+enum ScanType {
+  arrival
+  departure
+  access
+}
+
+enum PauseType {
+  dejeuner
+  course
+  fatigue
+  malaise
+  commission
+  autre
+}
+
+enum RetardStatut {
+  en_attente
+  approuve
+  refuse
+  ignore
+}
+
+model ScanDevice {
+  id          Int           @id @default(autoincrement())
+  fingerprint String        @db.VarChar(255)
+  userAgent   String?       @db.Text
+  platform    String?       @db.VarChar(100)
+  type        String?       @db.VarChar(50)
+  name        String        @db.VarChar(100)
+  method      String?       @default("fingerprint") @db.VarChar(20)
+  trusted     Boolean       @default(false)
+  lastSeen    DateTime      @default(now()) @map("last_seen")
+  adminId     Int           @map("admin_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  admin       Admin         @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  sessions    ScanSession[]
+
+  @@unique([fingerprint, method])
+  @@map("scan_devices")
+}
+
+model ScanSession {
+  id         Int         @id @default(autoincrement())
+  deviceId   Int         @map("device_id")
+  adminId    Int         @map("admin_id")
+  adminName  String      @map("admin_name")
+  method     String      @default("fingerprint")
+  deviceInfo String      @map("device_info")
+  unlockedAt DateTime    @default(now()) @map("unlocked_at")
+  expiresAt  DateTime    @map("expires_at")
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  device     ScanDevice? @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  admin      Admin       @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("scan_sessions")
+}

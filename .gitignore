@@ -168,7 +168,7 @@ passwords.txt
 credentials.txt
 
 # Fichiers de configuration Prisma
-prisma/migrations/
+# prisma/migrations/ - Commenté pour permettre le déploiement sur Render
 !prisma/migrations/.gitkeep
 
 # Fichiers de logs de test
@@ -217,9 +217,9 @@ DEPLOYMENT.md
 frontend/TROUBLESHOOTING_POSTGRESQL.md
 
 # Fichiers Prisma sensibles
-backend/prisma/schema.prisma
-backend/prisma/seed.js
-backend/prisma/migrations/
+# backend/prisma/schema.prisma - Commenté pour permettre le déploiement sur Render
+# backend/prisma/seed.js - Commenté pour permettre le déploiement sur Render
+# backend/prisma/migrations/ - Commenté pour permettre le déploiement sur Render
 backend/test-*.js
 
 # Fichiers de build contenant des secrets
