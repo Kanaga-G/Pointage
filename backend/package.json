@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& npx prisma migrate deploy && npx prisma generate && node server.js",
+    "start": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& node server.js",
+    "start:prod": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& npx prisma migrate deploy && npx prisma generate && node server.js",
     "dev": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& node server.js",
     "build": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& prisma generate",
     "db:check": "node scripts/check-db-connection.js",
@@ -11,6 +12,7 @@
     "db:pull": "prisma db pull --schema prisma/schema.prisma",
     "db:generate": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& prisma generate --schema prisma/schema.prisma",
     "db:sync": "node scripts/db-sync-safe.js",
+    "db:migrate": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& npx prisma migrate deploy && npx prisma generate",
     "prisma:generate": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
