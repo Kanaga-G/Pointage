@@ -3002,11 +3002,6 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Rediriger les GET sur /api/auth/login vers le frontend (évite les 404 lors d'un accès direct)
-app.get('/api/auth/login', (req, res) => {
-  res.redirect(301, process.env.FRONTEND_URL || 'http://localhost:5173');
-});
-
 app.get('/api/auth/validate', validateToken, async (req, res) => {
   try {
     const tokenUser = req.user?.user;
