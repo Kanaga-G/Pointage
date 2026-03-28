@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& node server.js",
+    "start": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& npx prisma migrate deploy && npx prisma generate && node server.js",
     "dev": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& node server.js",
     "build": "set PRISMA_CLIENT_ENGINE_TYPE=binary&& prisma generate",
     "db:check": "node scripts/check-db-connection.js",

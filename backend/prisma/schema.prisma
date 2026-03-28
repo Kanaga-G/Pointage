@@ -74,6 +74,7 @@ model Employe {
   rapportQuotidiens     Boolean                @default(false) @map("rapport_quotidiens")
   adresse               String?                @db.VarChar(255)
   departement           String?                @db.VarChar(100)
+  lastActivity          DateTime?              @map("last_activity")
   createdBy             Int?                   @map("created_by")
   absences              Absence[]
   badgeJournalier       Badge[]
